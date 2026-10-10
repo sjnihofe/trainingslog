@@ -59,11 +59,11 @@ export function daysBetween(a: string, b: string) {
   return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400_000);
 }
 
-export async function api<T = any>(url: string, init?: RequestInit & { body?: any }): Promise<T> {
+export async function api<T = any>(url: string, init?: Omit<RequestInit, 'body'> & { body?: unknown }): Promise<T> {
   const res = await fetch(url, {
     ...init,
     headers: init?.body ? { 'Content-Type': 'application/json' } : undefined,
-    body: init?.body && typeof init.body !== 'string' ? JSON.stringify(init.body) : init?.body,
+    body: init?.body === undefined ? undefined : typeof init.body === 'string' ? init.body : JSON.stringify(init.body),
   });
   if (res.status === 401 && !url.startsWith('/api/auth')) {
     window.location.href = '/login';
