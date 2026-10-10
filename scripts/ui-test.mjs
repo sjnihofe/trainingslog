@@ -18,10 +18,16 @@ const noOverflow = async (name) => ok(await page.evaluate(() => document.documen
 try {
   await page.goto(BASE + '/tag/' + D);
   ok(page.url().includes('/login'), 'ohne Login → Weiterleitung auf /login');
-  await page.fill('input[type=password]', process.env.PW);
-  await page.click('button[type=submit]');
-  await page.waitForURL(/\/tag\//);
-  ok(true, 'Login mit Passwort');
+  if (process.env.SESSION_TOKEN) {
+    // Lokaler Test: Session direkt setzen (mit scripts/mint-session.mjs erzeugt)
+    await ctx.addCookies([{ name: 'tl_session', value: process.env.SESSION_TOKEN, url: BASE }]);
+    ok(true, 'Test-Session gesetzt');
+  } else {
+    await page.fill('input[type=password]', process.env.PW);
+    await page.click('button[type=submit]');
+    await page.waitForURL(/\/tag\//);
+    ok(true, 'Login mit Passwort');
+  }
   await page.goto(BASE + '/tag/' + D);
   await page.waitForSelector('.cat');
   const cats = await page.$$eval('.cat-name', (els) => els.map((e) => e.textContent));
