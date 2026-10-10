@@ -183,6 +183,20 @@ try {
   await tap('.nav a:has-text("Mehr")');
   await page.waitForSelector('text=Fingerabdruck / Face ID');
   ok(true, 'Mehr-Seite mit Face-ID-Einrichtung, Passwort, Übungsverwaltung, Export');
+  // Installierbarkeit laut Chrome + Installieren-Knopf (Installations-Angebot simuliert)
+  const cdp2 = await ctx.newCDPSession(page);
+  const inst = await cdp2.send('Page.getInstallabilityErrors').catch((e) => ({ installabilityErrors: [{ errorId: 'cdp:' + e.message }] }));
+  ok(inst.installabilityErrors.length === 0, 'Chrome: App installierbar' + (inst.installabilityErrors.length ? ' – ' + JSON.stringify(inst.installabilityErrors) : ''));
+  await page.evaluate(() => {
+    const e = new Event('beforeinstallprompt');
+    e.prompt = async () => { window.__prompted = true; };
+    e.userChoice = Promise.resolve({ outcome: 'accepted' });
+    window.dispatchEvent(e);
+  });
+  await page.waitForSelector('.install button:has-text("App installieren")');
+  await tap('.install button:has-text("App installieren")');
+  await page.waitForSelector('text=Installiert');
+  ok(await page.evaluate(() => window.__prompted === true), 'Knopf „App installieren“ öffnet den Android-Installationsdialog');
   await noOverflow('Mehr');
 
   // Aufräumen

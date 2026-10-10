@@ -4,6 +4,7 @@ import { startRegistration } from '@simplewebauthn/browser';
 import { api, CATS, fmtShort } from '@/lib/format';
 import type { Exercise } from '@/components/types';
 import { IconFace } from '@/components/Icons';
+import InstallCard from '@/components/InstallCard';
 
 type Passkey = { id: string; device_name: string; created_at: string; last_used: string | null };
 
@@ -66,6 +67,7 @@ export default function Mehr() {
   return (
     <>
       <div className="topbar"><h1 className="title">Mehr</h1></div>
+      <InstallCard />
 
       <div className="label">Anmeldung</div>
       <div className="card">
