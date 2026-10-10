@@ -1,0 +1,21 @@
+// Screenshots (iPhone) für Sichtprüfung: BASE=... PW=... node scripts/screens.mjs
+import { chromium, devices } from 'playwright';
+const BASE = process.env.BASE;
+const b = await chromium.launch();
+const ctx = await b.newContext({ ...devices['iPhone 13'], deviceScaleFactor: 1 });
+const p = await ctx.newPage();
+await p.goto(BASE + '/login');
+await p.screenshot({ path: '/tmp/s0.jpg', type: 'jpeg', quality: 60 });
+await p.fill('input[type=password]', process.env.PW);
+await p.click('button[type=submit]');
+await p.waitForURL(/\/tag\//);
+await p.goto(BASE + '/tag/2026-10-10'); await p.waitForSelector('.entry');
+await p.screenshot({ path: '/tmp/s1.jpg', type: 'jpeg', quality: 60 });
+await p.click('.entry:has-text("Schulterdrücken")'); await p.waitForSelector('.setrow'); await p.waitForTimeout(400);
+await p.screenshot({ path: '/tmp/s2.jpg', type: 'jpeg', quality: 60 });
+await p.goto(BASE + '/fortschritt/1'); await p.waitForSelector('.chart svg path'); await p.waitForTimeout(300);
+await p.screenshot({ path: '/tmp/s3.jpg', type: 'jpeg', quality: 60 });
+await p.goto(BASE + '/tag/2026-10-10'); await p.waitForSelector('.entry');
+await p.click('.cat-head:has-text("Rücken")'); await p.waitForSelector('.sheet .pick'); await p.waitForTimeout(400);
+await p.screenshot({ path: '/tmp/s4.jpg', type: 'jpeg', quality: 60 });
+await b.close();
