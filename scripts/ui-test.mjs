@@ -4,6 +4,7 @@ import { chromium, devices } from 'playwright';
 
 const BASE = process.env.BASE ?? 'http://localhost:3000';
 const D = '2030-01-02';
+const NEW = 'UI Test ' + Date.now().toString(36);
 const out = [];
 const ok = (cond, msg) => out.push(`${cond ? 'PASS' : 'FAIL'} ${msg}`);
 
@@ -67,7 +68,7 @@ try {
 
   // Sonstiges → neue Übung
   await tap('.cat-head:has-text("Sonstiges")');
-  await page.fill('.sheet .search', 'UI Test Face Pulls');
+  await page.fill('.sheet .search', NEW);
   await tap('.sheet .newbtn');
   await page.waitForSelector('.sheet .last:has-text("Erstes Mal")');
   await page.waitForSelector('.setrow');
@@ -75,12 +76,12 @@ try {
   ok(rows.length === 2, 'Neue Übung startet mit 2 Sätzen à 8 Wdh');
   for (let i = 0; i < 2; i++) await page.fill(`.setrow >> nth=${i} >> input[inputmode=decimal]`, '15');
   await tap('.sheet-foot .btn.primary');
-  await page.waitForSelector('.entry:has-text("UI Test Face Pulls")');
-  ok(/2 × 8 × 15 kg/.test(await page.textContent('.entry:has-text("UI Test Face Pulls")')), 'Neue Übung gespeichert: 2 × 8 × 15 kg');
+  await page.waitForSelector(`.entry:has-text("${NEW}")`);
+  ok(/2 × 8 × 15 kg/.test(await page.textContent(`.entry:has-text("${NEW}")`)), 'Neue Übung gespeichert: 2 × 8 × 15 kg');
   ok((await page.textContent('.pill.accent'))?.includes('2 Übungen'), 'Zähler zeigt 2 Übungen');
 
   // Körpergewicht-Schalter
-  await tap('.entry:has-text("UI Test Face Pulls")');
+  await tap(`.entry:has-text("${NEW}")`);
   await page.waitForSelector('.setrow');
   await tap('.switch');
   ok((await page.$$('.setrow.bw')).length === 2, 'Körpergewicht-Schalter blendet Gewicht aus');
@@ -102,7 +103,7 @@ try {
   // Verlauf / Fortschritt / Mehr
   await tap('.nav a:has-text("Verlauf")');
   await page.waitForSelector('.stat');
-  ok((await page.textContent('.card')).includes('UI Test Face Pulls'), 'Verlauf zeigt das neue Training oben');
+  ok((await page.textContent('.card')).includes(NEW), 'Verlauf zeigt das neue Training oben');
   await noOverflow('Verlauf');
   // Kalender
   await tap('.seg button:has-text("Kalender")');
@@ -162,7 +163,7 @@ try {
 
   // Aufräumen
   await page.goto(BASE + '/tag/' + D);
-  for (const n of ['Kniebeuge', 'UI Test Face Pulls']) {
+  for (const n of ['Kniebeuge', NEW]) {
     await tap(`.entry:has-text("${n}")`);
     await tap('.sheet-foot .btn.danger');
     await page.waitForSelector(`.entry:has-text("${n}")`, { state: 'detached' });
