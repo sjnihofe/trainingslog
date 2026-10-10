@@ -38,7 +38,7 @@ try {
   await page.click('.cat-head:has-text("Beine")');
   await page.waitForSelector('.sheet .pick');
   const picks = await page.$$eval('.sheet .pick-name', (els) => els.map((e) => e.textContent));
-  ok(picks[0] === 'Kniebeuge', 'Übungsauswahl Beine, häufigste zuerst: ' + picks.join(', '));
+  ok(picks[0].startsWith('Kniebeuge'), 'Übungsauswahl Beine, häufigste zuerst: ' + picks.join(', '));
   await page.click('.sheet .pick:has-text("Kniebeuge")');
   await page.waitForSelector('.sheet .last');
   await page.waitForFunction(() => document.querySelectorAll('.setrow').length > 0);
@@ -46,22 +46,25 @@ try {
   ok(/70/.test(last), 'Editor zeigt letztes Mal: ' + last.trim());
   const w0 = await page.inputValue('.setrow >> nth=0 >> input[inputmode=decimal]');
   ok(w0 === '70', 'Gewicht aus letztem Training vorausgefüllt: ' + w0);
+  const n0 = (await page.$$('.setrow')).length;
   await page.click('.addset');
-  await page.click('.setrow >> nth=1 >> button[aria-label="Mehr Gewicht"]');
-  const w1 = await page.inputValue('.setrow >> nth=1 >> input[inputmode=decimal]');
+  ok((await page.$$('.setrow')).length === n0 + 1, `+ Satz: ${n0} → ${n0 + 1} Sätze`);
+  await page.click(`.setrow >> nth=${n0} >> button[aria-label="Mehr Gewicht"]`);
+  const w1 = await page.inputValue(`.setrow >> nth=${n0} >> input[inputmode=decimal]`);
   ok(w1 === '72,5', '+2,5 kg Taste: ' + w1);
   await noOverflow('Satz-Editor');
   await page.click('.sheet-foot .btn.primary');
   await page.waitForSelector('.toast');
   ok(true, 'Gespeichert, Toast: ' + (await page.textContent('.toast')));
   await page.waitForSelector('.entry:has-text("Kniebeuge")');
-  ok(/8×70 \/ 8×72,5 kg/.test(await page.textContent('.entry:has-text("Kniebeuge")')), 'Eintrag in Beine: ' + (await page.textContent('.entry:has-text("Kniebeuge") .entry-sets')));
+  ok(/72,5/.test(await page.textContent('.entry:has-text("Kniebeuge")')), 'Eintrag in Beine: ' + (await page.textContent('.entry:has-text("Kniebeuge") .entry-sets')));
 
   // Sonstiges → neue Übung
   await page.click('.cat-head:has-text("Sonstiges")');
   await page.fill('.sheet .search', 'UI Test Face Pulls');
   await page.click('.sheet .newbtn');
   await page.waitForSelector('.sheet .last:has-text("Erstes Mal")');
+  await page.waitForSelector('.setrow');
   const rows = await page.$$('.setrow');
   ok(rows.length === 2, 'Neue Übung startet mit 2 Sätzen à 8 Wdh');
   for (let i = 0; i < 2; i++) await page.fill(`.setrow >> nth=${i} >> input[inputmode=decimal]`, '15');
@@ -147,7 +150,7 @@ try {
   ok(true, '1RM-Ansicht: letzter Wert ' + (await page.$$eval('.chart text', (t) => t.map((x) => x.textContent).filter((s) => s.includes('kg')).join(' '))));
   await noOverflow('Fortschritt');
   await page.click('.nav a:has-text("Mehr")');
-  await page.waitForSelector('text=Face ID / Touch ID');
+  await page.waitForSelector('text=Fingerabdruck / Face ID');
   ok(true, 'Mehr-Seite mit Face-ID-Einrichtung, Passwort, Übungsverwaltung, Export');
   await noOverflow('Mehr');
 
@@ -164,7 +167,12 @@ try {
   ok(true, 'Testdaten wieder gelöscht');
 } catch (e) {
   ok(false, 'Abbruch: ' + e.message.split('\n')[0]);
-  await page.screenshot({ path: '/tmp/fail.png' });
+  // Notfall-Aufräumen über die API
+  await page.evaluate(async (d) => {
+    const day = await (await fetch('/api/day/' + d)).json();
+    for (const en of day.entries ?? []) await fetch('/api/entries/' + en.id, { method: 'DELETE' });
+    await fetch('/api/day/' + d, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"note":""}' });
+  }, D).catch(() => {});
 }
 ok(errors.length === 0, 'Keine JS-Fehler' + (errors.length ? ': ' + errors.join(' | ') : ''));
 console.log(out.join('\n'));

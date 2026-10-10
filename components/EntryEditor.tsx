@@ -22,6 +22,7 @@ export default function EntryEditor({ date, exercise, entry, onClose, onSaved }:
   const [bw, setBw] = useState<boolean>(entry ? entry.sets.every((s) => s.bodyweight) : false);
   const [last, setLast] = useState<{ date: string; sets: WSet[] } | null>(null);
   const [best, setBest] = useState<number | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
@@ -34,6 +35,7 @@ export default function EntryEditor({ date, exercise, entry, onClose, onSaved }:
       setLast(l);
       const ws = sessions.flatMap((s) => s.sets.map((x) => (x.bodyweight ? null : x.weight))).filter((x): x is number => x !== null);
       setBest(ws.length ? Math.max(...ws) : null);
+      setLoaded(true);
       if (!entry) {
         if (l && l.sets.length) {
           setRows(toRows(l.sets.map((s) => ({ ...s, reps: s.reps ?? 8 }))));
@@ -42,7 +44,7 @@ export default function EntryEditor({ date, exercise, entry, onClose, onSaved }:
           setRows([{ reps: '8', weight: '' }, { reps: '8', weight: '' }]);
         }
       }
-    }).catch(() => { if (!entry) setRows([{ reps: '8', weight: '' }, { reps: '8', weight: '' }]); });
+    }).catch(() => { setLoaded(true); if (!entry) setRows([{ reps: '8', weight: '' }, { reps: '8', weight: '' }]); });
     return () => { alive = false; };
   }, [exercise.id, date, entry]);
 
@@ -83,8 +85,10 @@ export default function EntryEditor({ date, exercise, entry, onClose, onSaved }:
     >
       {last ? (
         <div className="last tnum">Letztes Mal · {fmtShort(last.date)}: <b>{fmtSets(last.sets)}</b>{best !== null && <> · Bestwert {num(best)} kg</>}</div>
-      ) : (
+      ) : loaded ? (
         <div className="last">Erstes Mal – viel Erfolg!</div>
+      ) : (
+        <div className="last">Lade letztes Training …</div>
       )}
 
       <div className="toggle">
