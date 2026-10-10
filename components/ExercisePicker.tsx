@@ -27,7 +27,7 @@ export default function ExercisePicker({ category, exercises, onPick, onCreate, 
 
   const row = (e: Exercise) => (
     <button key={e.id} className="pick" onClick={() => onPick(e)}>
-      <span className="pick-name">{e.name}</span>
+      <span className="pick-name">{e.name}{e.favorite && <span className="star-inline"> ★</span>}</span>
       <span className="pick-meta tnum">
         {e.uses > 0 ? `${e.uses}×` : 'neu'}
         {e.last_date && <><br />{fmtShort(e.last_date)}</>}

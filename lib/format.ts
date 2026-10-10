@@ -73,3 +73,22 @@ export async function api<T = any>(url: string, init?: Omit<RequestInit, 'body'>
   if (!res.ok) throw new Error(data?.error ?? `Fehler ${res.status}`);
   return data as T;
 }
+
+// ---- Datumshelfer für Kalender & Auswertung (alles in UTC gerechnet, ISO-Strings YYYY-MM-DD) ----
+export const iso = (d: Date) => d.toISOString().slice(0, 10);
+export const parseISO = (s: string) => new Date(s + 'T00:00:00Z');
+export function addMonths(s: string, n: number) {
+  const d = parseISO(s.slice(0, 7) + '-01');
+  d.setUTCMonth(d.getUTCMonth() + n);
+  return iso(d);
+}
+export function monthStart(s: string) { return s.slice(0, 7) + '-01'; }
+export function monthEnd(s: string) { const d = parseISO(addMonths(s, 1)); d.setUTCDate(0); return iso(d); }
+export function mondayOf(s: string) { const d = parseISO(s); const wd = (d.getUTCDay() + 6) % 7; d.setUTCDate(d.getUTCDate() - wd); return iso(d); }
+export function isoWeek(s: string) {
+  const d = parseISO(s);
+  d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7));
+  const firstThu = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  return 1 + Math.round(((d.getTime() - firstThu.getTime()) / 86400_000 - 3 + ((firstThu.getUTCDay() + 6) % 7)) / 7);
+}
+export const monthName = (s: string, opts: Intl.DateTimeFormatOptions = { month: 'long' }) => parseISO(s).toLocaleDateString('de-DE', { ...opts, timeZone: 'UTC' });

@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS exercises (
   name        text NOT NULL UNIQUE,
   category    text NOT NULL CHECK (category IN ('Beine','Rücken','Brust','Schulter','Sonstiges')),
   archived    boolean NOT NULL DEFAULT false,
+  favorite    boolean NOT NULL DEFAULT false,   -- Standardübung
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 

@@ -27,9 +27,9 @@ export default function Mehr() {
       const opts = await api('/api/auth/passkey/register-options');
       const response = await startRegistration({ optionsJSON: opts });
       const ua = navigator.userAgent;
-      const name = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Mac/.test(ua) ? 'Mac' : /Android/.test(ua) ? 'Android' : 'Gerät';
+      const name = /Android/.test(ua) ? 'Android' : /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Mac/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : 'Gerät';
       await api('/api/auth/passkey/register-verify', { method: 'POST', body: { response, name } });
-      setMsg({ ok: 'Face ID / Touch ID ist eingerichtet. Ab jetzt kannst du dich damit anmelden.' });
+      setMsg({ ok: 'Biometrische Anmeldung ist eingerichtet. Ab jetzt kannst du dich damit anmelden.' });
       load();
     } catch (e: any) {
       setMsg({ err: e?.name === 'NotAllowedError' ? 'Abgebrochen.' : e.message });
@@ -71,9 +71,9 @@ export default function Mehr() {
       <div className="card">
         <div className="row" style={{ marginBottom: 10 }}>
           <IconFace />
-          <b>Face ID / Touch ID</b>
+          <b>Fingerabdruck / Face ID</b>
         </div>
-        {keys.length === 0 && <p className="muted small" style={{ marginTop: 0 }}>Noch nicht eingerichtet. Richte es auf deinem iPhone ein, dann brauchst du kein Passwort mehr.</p>}
+        {keys.length === 0 && <p className="muted small" style={{ marginTop: 0 }}>Noch nicht eingerichtet. Richte es auf deinem Handy ein (Android: Fingerabdruck oder Displaysperre, iPhone: Face ID), dann brauchst du kein Passwort mehr.</p>}
         {keys.map((k) => (
           <div key={k.id} className="row small" style={{ padding: '6px 0', borderTop: '1px solid var(--line)' }}>
             <span>{k.device_name}</span>
@@ -97,7 +97,7 @@ export default function Mehr() {
 
       <div className="label">Übungen verwalten</div>
       <div className="card">
-        <p className="muted small" style={{ marginTop: 0 }}>Kategorie ändern, umbenennen oder ausblenden. Ausgeblendete Übungen bleiben im Verlauf erhalten.</p>
+        <p className="muted small" style={{ marginTop: 0 }}>★ = Standardübung (im Fortschritt hervorgehoben). Außerdem Kategorie ändern, umbenennen oder ausblenden – ausgeblendete Übungen bleiben im Verlauf erhalten.</p>
         {visible.map((e) => (
           <div key={e.id} style={{ padding: '10px 0', borderTop: '1px solid var(--line)', opacity: e.archived ? 0.5 : 1 }}>
             <input
@@ -107,6 +107,7 @@ export default function Mehr() {
               onBlur={(ev) => ev.target.value.trim() && ev.target.value.trim() !== e.name && patchEx(e.id, { name: ev.target.value.trim() })}
             />
             <div className="row">
+              <button className={`star ${e.favorite ? 'on' : ''}`} onClick={() => patchEx(e.id, { favorite: !e.favorite })} aria-label="Standardübung">★</button>
               <select className="field" style={{ marginBottom: 0, height: 40, flex: 1 }} value={e.category} onChange={(ev) => patchEx(e.id, { category: ev.target.value })}>
                 {CATS.map((c) => <option key={c}>{c}</option>)}
               </select>

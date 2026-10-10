@@ -4,7 +4,10 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Trainingslog',
     short_name: 'Training',
+    id: '/',
     start_url: '/',
+    scope: '/',
+    orientation: 'portrait',
     display: 'standalone',
     background_color: '#0e1013',
     theme_color: '#0e1013',

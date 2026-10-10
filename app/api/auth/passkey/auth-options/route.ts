@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   const rows = (await sql`select id, transports from passkeys`) as any[];
-  if (!rows.length) return bad('Kein Face ID / Passkey eingerichtet', 404);
+  if (!rows.length) return bad('Keine biometrische Anmeldung eingerichtet', 404);
   const { rpID } = rpFromRequest(req);
   const options = await generateAuthenticationOptions({
     rpID,

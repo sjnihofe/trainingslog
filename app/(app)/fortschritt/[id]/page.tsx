@@ -12,7 +12,7 @@ const LABEL: Record<Metric, string> = { top: 'Top-Gewicht', e1rm: '1RM (geschät
 
 export default function ExerciseProgress({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [data, setData] = useState<{ exercise: { name: string; category: string }; sessions: Session[] } | null>(null);
+  const [data, setData] = useState<{ exercise: { name: string; category: string; favorite: boolean }; sessions: Session[] } | null>(null);
   const [metric, setMetric] = useState<Metric | null>(null);
   useEffect(() => { api(`/api/exercises/${id}/history`).then(setData); }, [id]);
 
@@ -43,6 +43,16 @@ export default function ExerciseProgress({ params }: { params: Promise<{ id: str
     <>
       <div className="topbar">
         <Link href="/fortschritt" className="iconbtn" aria-label="Zurück"><IconLeft /></Link>
+        <button
+          className={`star ${data.exercise.favorite ? 'on' : ''}`}
+          style={{ width: 44, height: 44 }}
+          aria-label={data.exercise.favorite ? 'Keine Standardübung mehr' : 'Als Standardübung markieren'}
+          onClick={async () => {
+            const favorite = !data.exercise.favorite;
+            setData({ ...data, exercise: { ...data.exercise, favorite } });
+            await api(`/api/exercises/${id}`, { method: 'PATCH', body: { favorite } });
+          }}
+        >★</button>
       </div>
       <div className="row" style={{ marginBottom: 4 }}>
         <span className="cat-dot" style={{ background: color }} />

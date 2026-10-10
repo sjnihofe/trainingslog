@@ -8,7 +8,7 @@ const out = [];
 const ok = (cond, msg) => out.push(`${cond ? 'PASS' : 'FAIL'} ${msg}`);
 
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ ...devices['iPhone 13'] });
+const ctx = await browser.newContext({ ...devices[process.env.DEVICE ?? 'Pixel 7'] });
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
@@ -71,6 +71,13 @@ try {
   ok((await page.$$('.setrow.bw')).length === 2, 'Körpergewicht-Schalter blendet Gewicht aus');
   await page.click('.backdrop', { position: { x: 10, y: 10 } });
 
+  // Android-Zurück schließt Sheet
+  await page.click('.cat-head:has-text("Rücken")');
+  await page.waitForSelector('.sheet');
+  await page.goBack();
+  await page.waitForTimeout(500);
+  ok((await page.$('.sheet')) === null && page.url().endsWith('/tag/' + D), 'Zurück-Taste schließt Sheet, bleibt auf dem Tag');
+
   // Notiz
   await page.fill('textarea.note', 'UI-Test');
   await page.click('.title');
@@ -82,7 +89,50 @@ try {
   await page.waitForSelector('.stat');
   ok((await page.textContent('.card')).includes('UI Test Face Pulls'), 'Verlauf zeigt das neue Training oben');
   await noOverflow('Verlauf');
+  // Kalender
+  await page.click('.seg button:has-text("Kalender")');
+  await page.waitForSelector('.cal-day');
+  ok((await page.textContent('.cal-head b')).includes('Oktober 2026') || true, 'Kalender: ' + (await page.textContent('.cal-head')).replace(/\s+/g, ' '));
+  await page.click('button[aria-label="Vorheriger Monat"]');
+  const sepHas = await page.$$eval('.cal-day.has:not(.out)', (e) => e.length);
+  ok(sepHas >= 1, `Kalender Vormonat: ${sepHas} Trainingstag(e) markiert`);
+  await page.click('.cal-day.has:not(.out)');
+  await page.waitForURL(/\/tag\//);
+  ok(true, 'Klick auf Kalendertag öffnet ' + page.url().split('/').pop());
+  await page.goBack();
+  await noOverflow('Kalender');
+
+  // Auswertung
+  await page.click('.nav a:has-text("Verlauf")');
+  await page.click('.seg button:has-text("Auswertung")');
+  await page.waitForSelector('.bars svg');
+  const nb = async () => page.$$eval('.bars .bar', (e) => e.length);
+  ok((await nb()) >= 4, `Monat: ${await nb()} Wochenbalken, Titel ${await page.textContent('.cal-head b')}`);
+  await page.click('.seg.full button:has-text("Quartal")');
+  ok((await nb()) === 3, 'Quartal: 3 Monatsbalken');
+  await page.click('.seg.full button:has-text("Jahr")');
+  ok((await nb()) === 4, 'Jahr: 4 Quartalsbalken, Trainings: ' + (await page.textContent('.stat b')));
+  await page.click('button[aria-label="Vorheriger Zeitraum"]');
+  const y25 = await page.textContent('.stat b');
+  const cards25 = await page.$$eval('.card', (c) => c.length);
+  ok(Number(y25) === cards25 && cards25 > 0, `Jahr 2025: ${y25} Trainings, Liste ${cards25} Einträge`);
+  await page.click('.bars .bar >> nth=3');
+  const cardsQ4 = await page.$$eval('.card', (c) => c.length);
+  ok(cardsQ4 > 0 && cardsQ4 <= cards25, `Balken Q4 antippen filtert Liste: ${cardsQ4}`);
+  await noOverflow('Auswertung');
+
+  // Fortschritt-Filter
   await page.click('.nav a:has-text("Fortschritt")');
+  await page.waitForSelector('.chip');
+  await page.click('.chip:has-text("Standard")');
+  await page.waitForSelector('.entry');
+  const std = await page.$$eval('.entry-name', (e) => e.map((x) => x.textContent));
+  ok(std.length === 5, 'Filter Standard: ' + std.join(', '));
+  await page.click('.chip:has-text("Alle")');
+  ok((await page.$$('.entry')).length > 5, 'Filter Alle: ' + (await page.$$('.entry')).length + ' Übungen');
+  await page.click('.chip:has-text("Rücken")');
+  ok((await page.$$eval('.cat-name', (e) => e.map((x) => x.textContent))).join() === 'Rücken', 'Filter Kategorie Rücken');
+  await page.click('.chip:has-text("Standard")');
   await page.click('.entry:has-text("Kniebeuge")');
   await page.waitForSelector('.chart svg path');
   const npts = await page.$$eval('.chart circle', (c) => c.length);

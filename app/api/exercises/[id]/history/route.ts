@@ -11,7 +11,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const beforeParam = url.searchParams.get('before');
   const before = beforeParam && isISODate(beforeParam) ? beforeParam : '9999-12-31';
   const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 1000, 1), 1000);
-  const ex = (await sql`select id, name, category, archived from exercises where id = ${id}`) as any[];
+  const ex = (await sql`select id, name, category, archived, favorite from exercises where id = ${id}`) as any[];
   if (!ex.length) return bad('Übung nicht gefunden', 404);
   const sessions = await sql`
     select en.id, w.date::text as date,

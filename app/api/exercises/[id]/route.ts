@@ -8,12 +8,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const name = typeof body?.name === 'string' ? body.name.trim().replace(/\s+/g, ' ').slice(0, 80) : null;
   const category = CATEGORIES.includes(body?.category) ? body.category : null;
   const archived = typeof body?.archived === 'boolean' ? body.archived : null;
+  const favorite = typeof body?.favorite === 'boolean' ? body.favorite : null;
   if (name !== null && !name) return bad('Name darf nicht leer sein');
   try {
     await sql`update exercises set
       name = coalesce(${name}, name),
       category = coalesce(${category}, category),
-      archived = coalesce(${archived}::bool, archived)
+      archived = coalesce(${archived}::bool, archived),
+      favorite = coalesce(${favorite}::bool, favorite)
       where id = ${id}`;
   } catch {
     return bad('Diesen Namen gibt es schon', 409);

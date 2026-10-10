@@ -45,7 +45,7 @@ export default function Login() {
       {hasPasskeys && (
         <>
           <button className="btn primary full" style={{ flex: 'none', marginBottom: 18 }} onClick={faceId} disabled={busy}>
-            <span style={{ width: 22, height: 22, display: 'inline-block' }}><IconFace /></span> Mit Face ID anmelden
+            <span style={{ width: 22, height: 22, display: 'inline-block' }}><IconFace /></span> Mit Fingerabdruck / Face ID anmelden
           </button>
           <div className="faint small" style={{ textAlign: 'center', marginBottom: 14 }}>oder mit Passwort</div>
         </>

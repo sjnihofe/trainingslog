@@ -1,13 +1,22 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { addDays, api, CAT_COLOR, fmtDate, fmtSets, todayISO, type WSet } from '@/lib/format';
+import WorkoutCard, { type Workout } from '@/components/WorkoutCard';
+import CalendarView from '@/components/CalendarView';
+import StatsView from '@/components/StatsView';
+import { addDays, api, fmtDate, todayISO } from '@/lib/format';
 
-type W = { date: string; note: string | null; entries: { name: string; category: string; sets: WSet[] }[] };
+type View = 'liste' | 'kalender' | 'auswertung';
+const KEY = 'tl_history_view';
 
 export default function Verlauf() {
-  const [data, setData] = useState<W[] | null>(null);
-  useEffect(() => { api<W[]>('/api/workouts').then(setData).catch(() => setData([])); }, []);
+  const [data, setData] = useState<Workout[] | null>(null);
+  const [view, setViewState] = useState<View>('liste');
+
+  useEffect(() => {
+    try { const v = localStorage.getItem(KEY) as View | null; if (v) setViewState(v); } catch {}
+    api<Workout[]>('/api/workouts').then(setData).catch(() => setData([]));
+  }, []);
+  const setView = (v: View) => { setViewState(v); try { localStorage.setItem(KEY, v); } catch {} };
 
   const stats = useMemo(() => {
     if (!data) return null;
@@ -24,38 +33,32 @@ export default function Verlauf() {
   return (
     <>
       <div className="topbar"><h1 className="title">Verlauf</h1></div>
-      {stats && (
-        <div className="stats">
-          <div className="stat"><b>{stats.total}</b><span>Trainings</span></div>
-          <div className="stat"><b>{stats.last30}</b><span>letzte 30 Tage</span></div>
-          <div className="stat"><b>{stats.perWeek}</b><span>pro Woche (8 W.)</span></div>
-        </div>
-      )}
+      <div className="seg full" style={{ marginBottom: 16 }}>
+        <button className={view === 'liste' ? 'on' : ''} onClick={() => setView('liste')}>Liste</button>
+        <button className={view === 'kalender' ? 'on' : ''} onClick={() => setView('kalender')}>Kalender</button>
+        <button className={view === 'auswertung' ? 'on' : ''} onClick={() => setView('auswertung')}>Auswertung</button>
+      </div>
+
       {!data && [0, 1, 2, 3].map((i) => <div key={i} className="skeleton" style={{ height: 96 }} />)}
-      {data?.length === 0 && <p className="muted">Noch keine Trainings erfasst.</p>}
-      {data?.map((w) => {
-        const m = fmtDate(w.date, { month: 'long', year: 'numeric' });
-        const head = m !== month ? ((month = m), <div className="month">{m}</div>) : null;
-        return (
-          <div key={w.date}>
-            {head}
-            <Link href={`/tag/${w.date}`} className="card">
-              <div className="row" style={{ marginBottom: 6 }}>
-                <b>{fmtDate(w.date, { weekday: 'short', day: 'numeric', month: 'short' })}</b>
-                <span className="faint small" style={{ marginLeft: 'auto' }}>{w.entries.length} Übungen</span>
-              </div>
-              {w.entries.map((e, i) => (
-                <div key={i} className="line-item">
-                  <span className="dot" style={{ background: CAT_COLOR[e.category] }} />
-                  <span>{e.name}</span>
-                  <span className="muted tnum" style={{ marginLeft: 'auto', textAlign: 'right' }}>{fmtSets(e.sets)}</span>
-                </div>
-              ))}
-              {w.note && <div className="muted small" style={{ marginTop: 4 }}>{w.note}</div>}
-            </Link>
-          </div>
-        );
-      })}
+      {data && view === 'kalender' && <CalendarView workouts={data} />}
+      {data && view === 'auswertung' && <StatsView workouts={data} />}
+      {data && view === 'liste' && (
+        <>
+          {stats && (
+            <div className="stats">
+              <div className="stat"><b>{stats.total}</b><span>Trainings</span></div>
+              <div className="stat"><b>{stats.last30}</b><span>letzte 30 Tage</span></div>
+              <div className="stat"><b>{stats.perWeek}</b><span>pro Woche (8 W.)</span></div>
+            </div>
+          )}
+          {data.length === 0 && <p className="muted">Noch keine Trainings erfasst.</p>}
+          {data.map((w) => {
+            const m = fmtDate(w.date, { month: 'long', year: 'numeric' });
+            const head = m !== month ? ((month = m), <div className="month">{m}</div>) : null;
+            return <div key={w.date}>{head}<WorkoutCard w={w} /></div>;
+          })}
+        </>
+      )}
     </>
   );
 }

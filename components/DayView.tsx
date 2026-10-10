@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import EntryEditor from './EntryEditor';
 import ExercisePicker from './ExercisePicker';
@@ -29,6 +29,21 @@ export default function DayView({ date }: { date: string }) {
 
   useEffect(() => { setEntries(null); load().catch(() => setEntries([])); }, [load]);
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2200); return () => clearTimeout(t); }, [toast]);
+
+  // Android-Zurück-Taste / Zurück-Geste schließt das offene Sheet statt die Seite zu verlassen
+  const sheetOpen = sheet !== null;
+  const closedByBack = useRef(false);
+  useEffect(() => {
+    if (!sheetOpen) return;
+    window.history.pushState({ ...window.history.state, tlSheet: true }, '');
+    const onPop = () => { closedByBack.current = true; setSheet(null); };
+    window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      if (!closedByBack.current && window.history.state?.tlSheet) window.history.back();
+      closedByBack.current = false;
+    };
+  }, [sheetOpen]);
 
   const go = (d: string) => router.push(`/tag/${d}`);
   const closeSheet = useCallback(() => setSheet(null), []);

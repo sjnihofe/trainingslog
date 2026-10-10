@@ -28,10 +28,10 @@ export async function POST(req: Request) {
         transports: pk.transports ? JSON.parse(pk.transports) : undefined,
       },
     });
-    if (!result.verified) return bad('Face ID fehlgeschlagen', 401);
+    if (!result.verified) return bad('Biometrische Anmeldung fehlgeschlagen', 401);
     await sql`update passkeys set counter = ${result.authenticationInfo.newCounter}, last_used = now() where id = ${pk.id}`;
   } catch (e: any) {
-    return bad('Face ID fehlgeschlagen: ' + (e?.message ?? ''), 401);
+    return bad('Biometrische Anmeldung fehlgeschlagen: ' + (e?.message ?? ''), 401);
   }
   const res = NextResponse.json({ ok: true });
   res.cookies.set('tl_chal', '', { path: '/', maxAge: 0 });
