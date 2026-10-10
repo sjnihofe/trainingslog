@@ -6,6 +6,7 @@ import ExercisePicker from './ExercisePicker';
 import { IconLeft, IconPlus, IconRight } from './Icons';
 import { addDays, api, CAT_COLOR, CATS, fmtDate, fmtSets, todayISO } from '@/lib/format';
 import type { Entry, Exercise } from './types';
+import { setSwipeDir, takeSwipeDir, useSwipe } from './useSwipe';
 
 type Sheet = null | { kind: 'pick'; category: string } | { kind: 'edit'; exercise: Pick<Exercise, 'id' | 'name' | 'category'>; entry?: Entry };
 
@@ -46,6 +47,12 @@ export default function DayView({ date }: { date: string }) {
   }, [sheetOpen]);
 
   const go = (d: string) => router.push(`/tag/${d}`);
+  // Wischen: links = nächster Tag, rechts = vorheriger Tag
+  const swipeRef = useSwipe<HTMLDivElement>((dir) => {
+    setSwipeDir(dir);
+    router.replace(`/tag/${addDays(date, dir)}`);
+  });
+  const [enter] = useState(() => takeSwipeDir());
   const closeSheet = useCallback(() => setSheet(null), []);
 
   async function saveNote() {
@@ -59,6 +66,7 @@ export default function DayView({ date }: { date: string }) {
 
   return (
     <>
+      <div ref={swipeRef} className={`swipe-area ${enter === 1 ? 'enter-right' : enter === -1 ? 'enter-left' : ''}`}>
       <div className="topbar">
         <div>
           <div className="subtitle">{date === today ? 'Heute' : date < today ? 'Nachtragen' : 'Geplant'}</div>
@@ -104,6 +112,7 @@ export default function DayView({ date }: { date: string }) {
               </section>
             );
           })}
+      </div>
 
       <div className="label">Notiz</div>
       <textarea

@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { IconLeft, IconRight } from './Icons';
 import WorkoutCard, { type Workout } from './WorkoutCard';
+import { useSwipe } from './useSwipe';
 import { addDays, addMonths, daysBetween, isoWeek, monthEnd, monthName, monthStart, mondayOf, num, todayISO } from '@/lib/format';
 
 type Mode = 'monat' | 'quartal' | 'jahr';
@@ -64,6 +65,7 @@ export default function StatsView({ workouts }: { workouts: Workout[] }) {
 
   const go = (dir: number) => { setAnchor(addMonths(anchor, dir * STEP[mode])); setSel(null); };
   const switchMode = (m: Mode) => { setMode(m); setSel(null); };
+  const swipeRef = useSwipe<HTMLDivElement>((d) => go(d));
 
   // Balkendiagramm
   const W = 340, H = 170, T = 20, B = 24, gap = mode === 'monat' ? 10 : 18;
@@ -80,6 +82,7 @@ export default function StatsView({ workouts }: { workouts: Workout[] }) {
         ))}
       </div>
 
+      <div ref={swipeRef} className="swipe-area">
       <div className="cal-head" style={{ marginBottom: 12 }}>
         <button className="iconbtn" onClick={() => go(-1)} aria-label="Vorheriger Zeitraum"><IconLeft /></button>
         <b style={{ fontSize: 18 }}>{title}</b>
@@ -114,6 +117,7 @@ export default function StatsView({ workouts }: { workouts: Workout[] }) {
             );
           })}
         </svg>
+      </div>
       </div>
 
       <div className="row" style={{ margin: '18px 4px 8px' }}>

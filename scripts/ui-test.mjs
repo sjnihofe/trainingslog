@@ -20,6 +20,15 @@ const tap = async (sel) => {
   await el.evaluate((n) => n.scrollIntoView({ block: 'center' }));
   await el.click();
 };
+const swipe = async (sel, dx, dy = 0) => {
+  const box = await page.locator(sel).first().boundingBox();
+  const x0 = box.x + box.width / 2, y0 = box.y + Math.min(box.height / 2, 160);
+  const cdp = await ctx.newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y: y0 }] });
+  for (let i = 1; i <= 8; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x0 + (dx * i) / 8, y: y0 + (dy * i) / 8 }] });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitForTimeout(700);
+};
 const noOverflow = async (name) => ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `${name}: kein horizontales Scrollen`);
 
 try {
@@ -40,6 +49,15 @@ try {
   const cats = await page.$$eval('.cat-name', (els) => els.map((e) => e.textContent));
   ok(cats.join(',') === 'Beine,Rücken,Brust,Schulter,Sonstiges', 'Tagesansicht zeigt 5 Kategorien: ' + cats.join(', '));
   await noOverflow('Tagesansicht');
+
+  // Wischen in der Tagesansicht
+  await swipe('.swipe-area', -130);
+  ok(page.url().endsWith('/tag/2030-01-03'), 'Nach links wischen → nächster Tag: ' + page.url().split('/').pop());
+  await swipe('.swipe-area', 130);
+  ok(page.url().endsWith('/tag/' + D), 'Nach rechts wischen → zurück: ' + page.url().split('/').pop());
+  await swipe('.swipe-area', 20, -200);
+  ok(page.url().endsWith('/tag/' + D), 'Senkrechtes Wischen ändert das Datum nicht');
+  await page.waitForSelector('.cat');
 
   // Beine → Kniebeuge
   await tap('.cat-head:has-text("Beine")');
@@ -109,6 +127,12 @@ try {
   await tap('.seg button:has-text("Kalender")');
   await page.waitForSelector('.cal-day');
   ok((await page.textContent('.cal-head b')).includes('Oktober 2026') || true, 'Kalender: ' + (await page.textContent('.cal-head')).replace(/\s+/g, ' '));
+  const m0 = await page.textContent('.cal-head b');
+  await swipe('.cal', -130);
+  const m1 = await page.textContent('.cal-head b');
+  await swipe('.cal', 130);
+  const m2 = await page.textContent('.cal-head b');
+  ok(m1 !== m0 && m2 === m0, `Kalender wischen: ${m0} → ${m1} → ${m2}`);
   await tap('button[aria-label="Vorheriger Monat"]');
   const sepHas = await page.$$eval('.cal-day.has:not(.out)', (e) => e.length);
   ok(sepHas >= 1, `Kalender Vormonat: ${sepHas} Trainingstag(e) markiert`);
@@ -128,7 +152,7 @@ try {
   ok((await nb()) === 3, 'Quartal: 3 Monatsbalken');
   await tap('.seg.full button:has-text("Jahr")');
   ok((await nb()) === 4, 'Jahr: 4 Quartalsbalken, Trainings: ' + (await page.textContent('.stat b')));
-  await tap('button[aria-label="Vorheriger Zeitraum"]');
+  await swipe('.bars', 130);
   const y25 = await page.textContent('.stat b');
   const cards25 = await page.$$eval('.card', (c) => c.length);
   ok(Number(y25) === cards25 && cards25 > 0, `Jahr 2025: ${y25} Trainings, Liste ${cards25} Einträge`);
