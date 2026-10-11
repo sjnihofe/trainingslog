@@ -8,6 +8,7 @@ const PUBLIC = new Set([
   '/api/auth/passkey/auth-options',
   '/api/auth/passkey/auth-verify',
   '/manifest.webmanifest',
+  '/api/strava/cron', // prüft CRON_SECRET selbst
 ]);
 
 export async function middleware(req: NextRequest) {

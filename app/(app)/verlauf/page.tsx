@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import WorkoutCard, { type Workout } from '@/components/WorkoutCard';
 import CalendarView from '@/components/CalendarView';
 import StatsView from '@/components/StatsView';
-import { addDays, api, fmtDate, todayISO } from '@/lib/format';
+import RunCard from '@/components/RunCard';
+import { addDays, api, fmtDate, todayISO, type Run } from '@/lib/format';
 
 type View = 'liste' | 'kalender' | 'auswertung';
 const KEY = 'tl_history_view';
@@ -11,10 +12,12 @@ const KEY = 'tl_history_view';
 export default function Verlauf() {
   const [data, setData] = useState<Workout[] | null>(null);
   const [view, setViewState] = useState<View>('liste');
+  const [runs, setRuns] = useState<Run[]>([]);
 
   useEffect(() => {
     try { const v = localStorage.getItem(KEY) as View | null; if (v) setViewState(v); } catch {}
     api<Workout[]>('/api/workouts').then(setData).catch(() => setData([]));
+    api<Run[]>('/api/runs').then(setRuns).catch(() => {});
   }, []);
   const setView = (v: View) => { setViewState(v); try { localStorage.setItem(KEY, v); } catch {} };
 
@@ -40,8 +43,8 @@ export default function Verlauf() {
       </div>
 
       {!data && [0, 1, 2, 3].map((i) => <div key={i} className="skeleton" style={{ height: 96 }} />)}
-      {data && view === 'kalender' && <CalendarView workouts={data} />}
-      {data && view === 'auswertung' && <StatsView workouts={data} />}
+      {data && view === 'kalender' && <CalendarView workouts={data} runs={runs} />}
+      {data && view === 'auswertung' && <StatsView workouts={data} runs={runs} />}
       {data && view === 'liste' && (
         <>
           {stats && (
@@ -52,11 +55,16 @@ export default function Verlauf() {
             </div>
           )}
           {data.length === 0 && <p className="muted">Noch keine Trainings erfasst.</p>}
-          {data.map((w) => {
-            const m = fmtDate(w.date, { month: 'long', year: 'numeric' });
-            const head = m !== month ? ((month = m), <div className="month">{m}</div>) : null;
-            return <div key={w.date}>{head}<WorkoutCard w={w} /></div>;
-          })}
+          {[
+            ...data.map((w) => ({ date: w.date, key: 'w' + w.date, node: <WorkoutCard w={w} /> })),
+            ...runs.map((r) => ({ date: r.date, key: 'r' + r.id, node: <RunCard r={r} /> })),
+          ]
+            .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : a.key.localeCompare(b.key)))
+            .map((it) => {
+              const m = fmtDate(it.date, { month: 'long', year: 'numeric' });
+              const head = m !== month ? ((month = m), <div className="month">{m}</div>) : null;
+              return <div key={it.key}>{head}{it.node}</div>;
+            })}
         </>
       )}
     </>

@@ -154,10 +154,10 @@ try {
   ok((await nb()) === 4, 'Jahr: 4 Quartalsbalken, Trainings: ' + (await page.textContent('.stat b')));
   await swipe('.bars', 130);
   const y25 = await page.textContent('.stat b');
-  const cards25 = await page.$$eval('.card', (c) => c.length);
+  const cards25 = await page.$$eval('.card:not(.run-card)', (c) => c.length);
   ok(Number(y25) === cards25 && cards25 > 0, `Jahr 2025: ${y25} Trainings, Liste ${cards25} Einträge`);
   await tap('.bars .bar >> nth=3');
-  const cardsQ4 = await page.$$eval('.card', (c) => c.length);
+  const cardsQ4 = await page.$$eval('.card:not(.run-card)', (c) => c.length);
   ok(cardsQ4 > 0 && cardsQ4 <= cards25, `Balken Q4 antippen filtert Liste: ${cardsQ4}`);
   await noOverflow('Auswertung');
 
@@ -183,6 +183,8 @@ try {
   await tap('.nav a:has-text("Mehr")');
   await page.waitForSelector('text=Fingerabdruck / Face ID');
   ok(true, 'Mehr-Seite mit Face-ID-Einrichtung, Passwort, Übungsverwaltung, Export');
+  await page.waitForSelector('.strava-card :text("Strava")');
+  ok(true, 'Strava-Bereich: ' + (await page.textContent('.strava-card')).replace(/\s+/g, ' ').slice(0, 90));
   // Installierbarkeit laut Chrome + Installieren-Knopf (Installations-Angebot simuliert)
   const cdp2 = await ctx.newCDPSession(page);
   const inst = await cdp2.send('Page.getInstallabilityErrors').catch((e) => ({ installabilityErrors: [{ errorId: 'cdp:' + e.message }] }));

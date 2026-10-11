@@ -5,6 +5,7 @@ import { api, CATS, fmtShort } from '@/lib/format';
 import type { Exercise } from '@/components/types';
 import { IconFace } from '@/components/Icons';
 import InstallCard from '@/components/InstallCard';
+import StravaCard from '@/components/StravaCard';
 
 type Passkey = { id: string; device_name: string; created_at: string; last_used: string | null };
 
@@ -96,6 +97,9 @@ export default function Mehr() {
         {pwMsg.ok && <p className="okmsg">{pwMsg.ok}</p>}
         {pwMsg.err && <p className="err">{pwMsg.err}</p>}
       </form>
+
+      <div className="label">Verknüpfungen</div>
+      <StravaCard />
 
       <div className="label">Übungen verwalten</div>
       <div className="card">

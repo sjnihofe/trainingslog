@@ -92,3 +92,21 @@ export function isoWeek(s: string) {
   return 1 + Math.round(((d.getTime() - firstThu.getTime()) / 86400_000 - 3 + ((firstThu.getUTCDay() + 6) % 7)) / 7);
 }
 export const monthName = (s: string, opts: Intl.DateTimeFormatOptions = { month: 'long' }) => parseISO(s).toLocaleDateString('de-DE', { ...opts, timeZone: 'UTC' });
+
+// ---- Läufe (Strava) ----
+export type Run = { id: string; date: string; name: string | null; sport_type: string; distance_m: number; moving_time_s: number; elevation_gain_m: number | null; avg_hr: number | null };
+
+export const fmtKm = (m: number) => (m / 1000).toFixed(m >= 100000 ? 0 : m >= 10000 ? 1 : 2).replace('.', ',') + ' km';
+export function fmtDuration(s: number) {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.round(s % 60);
+  const mm = String(m).padStart(h ? 2 : 1, '0'), ss = String(sec).padStart(2, '0');
+  return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+export function fmtPace(movingS: number, distanceM: number) {
+  if (!distanceM) return '–';
+  const p = movingS / (distanceM / 1000);
+  let m = Math.floor(p / 60), s = Math.round(p % 60);
+  if (s === 60) { m += 1; s = 0; }
+  return `${m}:${String(s).padStart(2, '0')} /km`;
+}
+export const RUN_LABEL: Record<string, string> = { Run: 'Lauf', TrailRun: 'Traillauf', VirtualRun: 'Laufband' };

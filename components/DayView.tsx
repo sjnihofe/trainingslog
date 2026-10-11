@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation';
 import EntryEditor from './EntryEditor';
 import ExercisePicker from './ExercisePicker';
 import { IconLeft, IconPlus, IconRight } from './Icons';
-import { addDays, api, CAT_COLOR, CATS, fmtDate, fmtSets, todayISO } from '@/lib/format';
+import { addDays, api, CAT_COLOR, CATS, fmtDate, fmtSets, todayISO, RUN_LABEL, type Run } from '@/lib/format';
+import { RunStats } from './RunCard';
 import type { Entry, Exercise } from './types';
 import { setSwipeDir, takeSwipeDir, useSwipe } from './useSwipe';
 
@@ -13,6 +14,7 @@ type Sheet = null | { kind: 'pick'; category: string } | { kind: 'edit'; exercis
 export default function DayView({ date }: { date: string }) {
   const router = useRouter();
   const [entries, setEntries] = useState<Entry[] | null>(null);
+  const [runs, setRuns] = useState<Run[]>([]);
   const [note, setNote] = useState('');
   const [savedNote, setSavedNote] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -23,6 +25,7 @@ export default function DayView({ date }: { date: string }) {
   const load = useCallback(async () => {
     const [day, ex] = await Promise.all([api(`/api/day/${date}`), api<Exercise[]>('/api/exercises')]);
     setEntries(day.entries);
+    setRuns(day.runs ?? []);
     setNote(day.note ?? '');
     setSavedNote(day.note ?? '');
     setExercises(ex);
@@ -112,6 +115,21 @@ export default function DayView({ date }: { date: string }) {
               </section>
             );
           })}
+      {runs.length > 0 && (
+        <>
+          <div className="label">Laufen · Strava</div>
+          {runs.map((r) => (
+            <a key={r.id} className="card run-card" href={`https://www.strava.com/activities/${r.id}`} target="_blank" rel="noopener noreferrer">
+              <div className="row" style={{ marginBottom: 8 }}>
+                <span className="run-badge">{RUN_LABEL[r.sport_type] ?? 'Lauf'}</span>
+                <b style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</b>
+                <span className="small" style={{ marginLeft: 'auto', color: 'var(--strava)', fontWeight: 700, flex: 'none' }}>Strava ↗</span>
+              </div>
+              <RunStats r={{ ...r, date }} />
+            </a>
+          ))}
+        </>
+      )}
       </div>
 
       <div className="label">Notiz</div>
