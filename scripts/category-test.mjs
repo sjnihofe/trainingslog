@@ -25,7 +25,8 @@ try {
   await p.fill('#kategorien input[placeholder^="Neue Kategorie"]', 'Core');
   await p.click('#kategorien .swatch >> nth=6');
   await p.click('#kategorien button:has-text("Hinzufügen")');
-  await p.waitForFunction(() => [...document.querySelectorAll('#kategorien input.catname')].some((i) => i.value === 'Core'));
+  // warten, bis die Liste 6 Kategorien + Eingabezeile zeigt und das Eingabefeld geleert ist
+  await p.waitForFunction(() => { const i = [...document.querySelectorAll('#kategorien input.catname')]; return i.length === 7 && i[5].value === 'Core' && i[6].value === ''; });
   ok(true, 'Kategorie „Core“ angelegt');
 
   // Umbenennen
