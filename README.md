@@ -13,4 +13,4 @@ Next.js (App Router) · Neon Postgres · Vercel · SimpleWebAuthn
 ## Setup
 1. `db/schema.sql` in der Datenbank ausführen.
 2. Env-Variablen setzen (siehe `.env.example`): `DATABASE_URL`, `SESSION_SECRET`.
-3. Passwort-Hash in `app_settings` (`key = 'password_hash'`, Format `scrypt$salt$hash`) anlegen.
+3. Konten legt man in der App über „Registrieren“ an (E-Mail + Passwort).
