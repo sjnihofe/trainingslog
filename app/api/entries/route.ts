@@ -1,17 +1,21 @@
 import { sql, isISODate, normalizeSets } from '@/lib/db';
-import { bad, json } from '@/lib/http';
+import { bad, currentUid, json, unauthorized } from '@/lib/http';
 
 export async function POST(req: Request) {
+  const uid = await currentUid();
+  if (!uid) return unauthorized();
   const body = await req.json().catch(() => ({}));
   const { date, exerciseId } = body ?? {};
   const sets = normalizeSets(body?.sets);
   if (!isISODate(date)) return bad('Ungültiges Datum');
   if (!Number.isInteger(exerciseId)) return bad('Übung fehlt');
   if (!sets.length) return bad('Mindestens ein Satz nötig');
+  const own = (await sql`select 1 from exercises where id = ${exerciseId} and user_id = ${uid}`) as any[];
+  if (!own.length) return bad('Übung nicht gefunden', 404);
   const rows = (await sql`
     with w as (
-      insert into workouts (date) values (${date})
-      on conflict (date) do update set date = excluded.date
+      insert into workouts (user_id, date) values (${uid}, ${date})
+      on conflict (user_id, date) do update set date = excluded.date
       returning id
     ), e as (
       insert into entries (workout_id, exercise_id) select id, ${exerciseId} from w returning id

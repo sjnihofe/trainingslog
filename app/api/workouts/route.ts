@@ -1,9 +1,11 @@
 import { sql } from '@/lib/db';
-import { json } from '@/lib/http';
+import { currentUid, json, unauthorized } from '@/lib/http';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const uid = await currentUid();
+  if (!uid) return unauthorized();
   const rows = await sql`
     select w.date::text as date, w.note,
       coalesce(json_agg(json_build_object(
@@ -14,6 +16,7 @@ export async function GET() {
     from workouts w
     left join entries en on en.workout_id = w.id
     left join exercises ex on ex.id = en.exercise_id
+    where w.user_id = ${uid}
     group by w.id
     order by w.date desc`;
   return json(rows);

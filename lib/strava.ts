@@ -41,34 +41,34 @@ export async function tokenRequest(params: Record<string, string>): Promise<Toke
   return data;
 }
 
-export async function saveConnection(t: TokenResponse, scope: string) {
+export async function saveConnection(uid: number, t: TokenResponse, scope: string) {
   const a = t.athlete!;
   const name = [a.firstname, a.lastname].filter(Boolean).join(' ') || null;
-  await sql`insert into strava_auth (id, athlete_id, athlete_name, scope, access_token_enc, refresh_token_enc, expires_at, connected_at)
-    values (1, ${a.id}, ${name}, ${scope}, ${encrypt(t.access_token)}, ${encrypt(t.refresh_token)}, ${t.expires_at}, now())
-    on conflict (id) do update set athlete_id = excluded.athlete_id, athlete_name = excluded.athlete_name, scope = excluded.scope,
+  await sql`insert into strava_auth (user_id, athlete_id, athlete_name, scope, access_token_enc, refresh_token_enc, expires_at, connected_at)
+    values (${uid}, ${a.id}, ${name}, ${scope}, ${encrypt(t.access_token)}, ${encrypt(t.refresh_token)}, ${t.expires_at}, now())
+    on conflict (user_id) do update set athlete_id = excluded.athlete_id, athlete_name = excluded.athlete_name, scope = excluded.scope,
       access_token_enc = excluded.access_token_enc, refresh_token_enc = excluded.refresh_token_enc,
       expires_at = excluded.expires_at, connected_at = now(), last_sync = null`;
 }
 
-export async function getAccessToken(): Promise<string | null> {
-  const rows = (await sql`select access_token_enc, refresh_token_enc, expires_at from strava_auth where id = 1`) as any[];
+export async function getAccessToken(uid: number): Promise<string | null> {
+  const rows = (await sql`select access_token_enc, refresh_token_enc, expires_at from strava_auth where user_id = ${uid}`) as any[];
   if (!rows.length) return null;
   const r = rows[0];
   if (Number(r.expires_at) - 300 > Date.now() / 1000) return decrypt(r.access_token_enc);
   const t = await tokenRequest({ grant_type: 'refresh_token', refresh_token: decrypt(r.refresh_token_enc) });
   await sql`update strava_auth set access_token_enc = ${encrypt(t.access_token)}, refresh_token_enc = ${encrypt(t.refresh_token)},
-    expires_at = ${t.expires_at} where id = 1`;
+    expires_at = ${t.expires_at} where user_id = ${uid}`;
   return t.access_token;
 }
 
 /** Holt Läufe von Strava. full = gesamte Historie, sonst ab letztem Lauf (minus 14 Tage für nachträgliche Änderungen). */
-export async function syncRuns(full = false) {
-  const token = await getAccessToken();
+export async function syncRuns(uid: number, full = false) {
+  const token = await getAccessToken(uid);
   if (!token) return { connected: false, synced: 0 };
   let after = 0;
   if (!full) {
-    const m = (await sql`select extract(epoch from max(start_time))::bigint as t from runs`) as any[];
+    const m = (await sql`select extract(epoch from max(start_time))::bigint as t from runs where user_id = ${uid}`) as any[];
     if (m[0]?.t) after = Number(m[0].t) - 14 * 86400;
   }
   let synced = 0;
@@ -84,31 +84,31 @@ export async function syncRuns(full = false) {
     if (!Array.isArray(acts) || acts.length === 0) break;
     const runs = acts.filter((a) => RUN_TYPES.includes(a.sport_type ?? a.type) && a.distance > 0);
     if (runs.length) {
-      await sql`insert into runs (strava_id, start_time, start_date, name, sport_type, distance_m, moving_time_s, elapsed_time_s, elevation_gain_m, avg_hr, updated_at)
-        select t.id, t.st, t.sd, t.nm, t.sp, t.di, t.mt, t.et, t.el, t.hr, now()
+      await sql`insert into runs (strava_id, user_id, start_time, start_date, name, sport_type, distance_m, moving_time_s, elapsed_time_s, elevation_gain_m, avg_hr, updated_at)
+        select t.id, ${uid}::int, t.st, t.sd, t.nm, t.sp, t.di, t.mt, t.et, t.el, t.hr, now()
         from unnest(${runs.map((a) => String(a.id))}::bigint[], ${runs.map((a) => a.start_date)}::timestamptz[],
                     ${runs.map((a) => String(a.start_date_local).slice(0, 10))}::date[], ${runs.map((a) => a.name ?? null)}::text[],
                     ${runs.map((a) => a.sport_type ?? a.type)}::text[], ${runs.map((a) => a.distance)}::numeric[],
                     ${runs.map((a) => a.moving_time)}::int[], ${runs.map((a) => a.elapsed_time ?? null)}::int[],
                     ${runs.map((a) => a.total_elevation_gain ?? null)}::numeric[], ${runs.map((a) => a.average_heartrate ?? null)}::numeric[])
              as t(id, st, sd, nm, sp, di, mt, et, el, hr)
-        on conflict (strava_id) do update set start_time = excluded.start_time, start_date = excluded.start_date, name = excluded.name,
+        on conflict (strava_id) do update set user_id = excluded.user_id, start_time = excluded.start_time, start_date = excluded.start_date, name = excluded.name,
           sport_type = excluded.sport_type, distance_m = excluded.distance_m, moving_time_s = excluded.moving_time_s,
           elapsed_time_s = excluded.elapsed_time_s, elevation_gain_m = excluded.elevation_gain_m, avg_hr = excluded.avg_hr, updated_at = now()`;
       synced += runs.length;
     }
     if (acts.length < 200) break;
   }
-  await sql`update strava_auth set last_sync = now() where id = 1`;
+  await sql`update strava_auth set last_sync = now() where user_id = ${uid}`;
   return { connected: true, synced };
 }
 
 /** Synchronisiert nur, wenn der letzte Abgleich länger als `minutes` her ist. Fehler werden geschluckt. */
-export async function syncIfStale(minutes = 10) {
+export async function syncIfStale(uid: number, minutes = 10) {
   if (!stravaConfigured()) return;
   try {
-    const rows = (await sql`select last_sync from strava_auth where id = 1 and (last_sync is null or last_sync < now() - make_interval(mins => ${minutes}))`) as any[];
-    if (rows.length) await syncRuns(false);
+    const rows = (await sql`select last_sync from strava_auth where user_id = ${uid} and (last_sync is null or last_sync < now() - make_interval(mins => ${minutes}))`) as any[];
+    if (rows.length) await syncRuns(uid, false);
   } catch {
     /* Anzeige soll nicht an Strava scheitern */
   }

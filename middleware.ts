@@ -4,7 +4,7 @@ import { SESSION_COOKIE, verifySessionToken } from './lib/session';
 const PUBLIC = new Set([
   '/login',
   '/api/auth/login',
-  '/api/auth/status',
+  '/api/auth/register',
   '/api/auth/passkey/auth-options',
   '/api/auth/passkey/auth-verify',
   '/manifest.webmanifest',

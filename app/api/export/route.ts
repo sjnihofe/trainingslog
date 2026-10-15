@@ -1,14 +1,18 @@
 import { sql } from '@/lib/db';
+import { currentUid, unauthorized } from '@/lib/http';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const uid = await currentUid();
+  if (!uid) return unauthorized();
   const rows = (await sql`
     select w.date::text as date, ex.category, ex.name, s.set_no, s.reps, s.weight, s.bodyweight, w.note
     from workouts w
     left join entries en on en.workout_id = w.id
     left join exercises ex on ex.id = en.exercise_id
     left join sets s on s.entry_id = en.id
+    where w.user_id = ${uid}
     order by w.date, en.id, s.set_no`) as any[];
   const esc = (v: unknown) => {
     if (v === null || v === undefined) return '';

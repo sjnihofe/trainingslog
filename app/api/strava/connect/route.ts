@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
 import { STRAVA_OAUTH, stravaConfigured } from '@/lib/strava';
-import { rpFromRequest } from '@/lib/http';
+import { currentUid, rpFromRequest } from '@/lib/http';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   const { origin } = rpFromRequest(req);
+  if (!(await currentUid())) return NextResponse.redirect(`${origin}/login`);
   if (!stravaConfigured()) return NextResponse.redirect(`${origin}/mehr?strava=nicht-eingerichtet`);
   const state = randomBytes(16).toString('base64url');
   const url = new URL(`${STRAVA_OAUTH}/authorize`);

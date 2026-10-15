@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { saveConnection, stravaConfigured, syncRuns, tokenRequest } from '@/lib/strava';
-import { rpFromRequest } from '@/lib/http';
+import { currentUid, rpFromRequest } from '@/lib/http';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,6 +14,8 @@ export async function GET(req: Request) {
     res.cookies.set('tl_strava_state', '', { path: '/', maxAge: 0 });
     return res;
   };
+  const uid = await currentUid();
+  if (!uid) return NextResponse.redirect(`${origin}/login`);
   if (!stravaConfigured()) return back('nicht-eingerichtet');
   const url = new URL(req.url);
   const state = (await cookies()).get('tl_strava_state')?.value;
@@ -23,10 +25,10 @@ export async function GET(req: Request) {
   if (!/activity:read/.test(scope)) return back('keine-berechtigung');
   try {
     const t = await tokenRequest({ code: url.searchParams.get('code') ?? '', grant_type: 'authorization_code' });
-    await saveConnection(t, scope);
+    await saveConnection(uid, t, scope);
   } catch {
     return back('fehler');
   }
-  try { await syncRuns(true); } catch { /* Erstabgleich darf scheitern – läuft beim nächsten Öffnen erneut */ }
+  try { await syncRuns(uid, true); } catch { /* Erstabgleich darf scheitern – läuft beim nächsten Öffnen erneut */ }
   return back('verbunden');
 }

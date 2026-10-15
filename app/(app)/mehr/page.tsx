@@ -16,10 +16,12 @@ export default function Mehr() {
   const [pw, setPw] = useState({ current: '', next: '' });
   const [pwMsg, setPwMsg] = useState<{ ok?: string; err?: string }>({});
   const [showArchived, setShowArchived] = useState(false);
+  const [me, setMe] = useState<{ email: string } | null>(null);
 
   const load = useCallback(() => {
     api<Passkey[]>('/api/auth/passkey/list').then(setKeys).catch(() => {});
     api<Exercise[]>('/api/exercises').then(setEx).catch(() => {});
+    api<{ email: string }>('/api/auth/me').then(setMe).catch(() => {});
   }, []);
   useEffect(load, [load]);
 
@@ -69,6 +71,12 @@ export default function Mehr() {
     <>
       <div className="topbar"><h1 className="title">Mehr</h1></div>
       <InstallCard />
+
+      <div className="label">Konto</div>
+      <div className="card row">
+        <span className="muted small">Angemeldet als</span>
+        <b style={{ marginLeft: 'auto', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{me?.email ?? '…'}</b>
+      </div>
 
       <div className="label">Anmeldung</div>
       <div className="card">

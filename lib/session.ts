@@ -22,25 +22,26 @@ async function hmac(data: string) {
   return b64url(new Uint8Array(sig));
 }
 
-export async function createSessionToken() {
-  const payload = b64url(enc.encode(JSON.stringify({ exp: Date.now() + SESSION_DAYS * 86400_000 })));
+export async function createSessionToken(uid: number) {
+  const payload = b64url(enc.encode(JSON.stringify({ uid, exp: Date.now() + SESSION_DAYS * 86400_000 })));
   return `${payload}.${await hmac(payload)}`;
 }
 
-export async function verifySessionToken(token: string | undefined | null) {
-  if (!token) return false;
+/** Gibt die Nutzer-ID zurück, wenn das Token gültig ist, sonst null. */
+export async function verifySessionToken(token: string | undefined | null): Promise<number | null> {
+  if (!token) return null;
   const [payload, sig] = token.split('.');
-  if (!payload || !sig) return false;
+  if (!payload || !sig) return null;
   try {
     const expected = await hmac(payload);
-    if (expected.length !== sig.length) return false;
+    if (expected.length !== sig.length) return null;
     let diff = 0;
     for (let i = 0; i < sig.length; i++) diff |= expected.charCodeAt(i) ^ sig.charCodeAt(i);
-    if (diff !== 0) return false;
-    const { exp } = JSON.parse(fromB64url(payload));
-    return typeof exp === 'number' && exp > Date.now();
+    if (diff !== 0) return null;
+    const { uid, exp } = JSON.parse(fromB64url(payload));
+    return typeof exp === 'number' && exp > Date.now() && Number.isInteger(uid) ? uid : null;
   } catch {
-    return false;
+    return null;
   }
 }
 

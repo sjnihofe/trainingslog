@@ -39,6 +39,7 @@ try {
     await ctx.addCookies([{ name: 'tl_session', value: process.env.SESSION_TOKEN, url: BASE }]);
     ok(true, 'Test-Session gesetzt');
   } else {
+    await page.fill('input[type=email]', process.env.EMAIL);
     await page.fill('input[type=password]', process.env.PW);
     await tap('button[type=submit]');
     await page.waitForURL(/\/tag\//);

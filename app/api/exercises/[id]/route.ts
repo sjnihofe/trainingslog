@@ -1,7 +1,9 @@
 import { sql, CATEGORIES } from '@/lib/db';
-import { bad, json } from '@/lib/http';
+import { bad, currentUid, json, unauthorized } from '@/lib/http';
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const uid = await currentUid();
+  if (!uid) return unauthorized();
   const id = Number((await params).id);
   if (!Number.isInteger(id)) return bad('Ungültige ID');
   const body = await req.json().catch(() => ({}));
@@ -16,7 +18,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       category = coalesce(${category}, category),
       archived = coalesce(${archived}::bool, archived),
       favorite = coalesce(${favorite}::bool, favorite)
-      where id = ${id}`;
+      where id = ${id} and user_id = ${uid}`;
   } catch {
     return bad('Diesen Namen gibt es schon', 409);
   }

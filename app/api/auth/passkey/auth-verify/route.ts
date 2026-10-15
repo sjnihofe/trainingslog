@@ -10,8 +10,8 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const challenge = (await cookies()).get('tl_chal')?.value;
   if (!body?.id || !challenge) return bad('Anmeldung abgelaufen, bitte erneut versuchen');
-  const rows = (await sql`select id, public_key, counter, transports from passkeys where id = ${body.id}`) as any[];
-  if (!rows.length) return bad('Unbekannter Passkey', 401);
+  const rows = (await sql`select id, user_id, public_key, counter, transports from passkeys where id = ${body.id}`) as any[];
+  if (!rows.length) return bad('Dieser Passkey ist keinem Konto zugeordnet – bitte mit E-Mail anmelden', 401);
   const pk = rows[0];
   const { rpID, origin } = rpFromRequest(req);
   try {
@@ -35,5 +35,5 @@ export async function POST(req: Request) {
   }
   const res = NextResponse.json({ ok: true });
   res.cookies.set('tl_chal', '', { path: '/', maxAge: 0 });
-  return withSession(res);
+  return withSession(res, pk.user_id);
 }
