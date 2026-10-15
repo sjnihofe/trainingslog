@@ -31,17 +31,21 @@ try {
   // Umbenennen
   const coreInput = p.locator('#kategorien input.catname').filter({ hasNot: p.locator('[placeholder]') }).nth(5);
   await coreInput.fill('Rumpf');
+  const patched = p.waitForResponse((r) => r.url().includes('/api/categories/') && r.request().method() === 'PATCH');
   await coreInput.blur();
-  await p.waitForFunction(() => [...document.querySelectorAll('#kategorien input.catname')].some((i) => i.value === 'Rumpf'));
+  ok((await patched).status() === 200, 'Umbenennen gespeichert');
+  await p.waitForTimeout(400);
   let cats = (await api('/api/categories')).body;
   const rumpf = cats.find((c) => c.name === 'Rumpf');
   ok(rumpf && rumpf.color.toLowerCase() === '#f2e14c', `Umbenannt in „Rumpf“, Farbe ${rumpf?.color}`);
 
   // Farbe ändern + nach oben verschieben
   await p.click('#kategorien .catrow >> nth=5 >> button[aria-label="Mehr Optionen"]');
-  await p.click('#kategorien .catrow >> nth=5 >> .swatch >> nth=1');
-  await p.waitForTimeout(500);
-  for (let i = 0; i < 5; i++) { await p.click('#kategorien .catrow >> nth=' + (5 - i) + ' >> button[aria-label="Nach oben"]'); await p.waitForTimeout(400); }
+  await Promise.all([p.waitForResponse((r) => r.url().includes('/api/categories/') && r.request().method() === 'PATCH'), p.click('#kategorien .catrow >> nth=5 >> .swatch >> nth=1')]);
+  for (let i = 0; i < 5; i++) {
+    await Promise.all([p.waitForResponse((r) => r.url().endsWith('/api/categories') && r.request().method() === 'GET'), p.click('#kategorien .catrow >> nth=' + (5 - i) + ' >> button[aria-label="Nach oben"]')]);
+    await p.waitForTimeout(150);
+  }
   const order = await dayCats();
   ok(order[0] === 'Rumpf' && order.length === 6, 'Reihenfolge in der Tagesansicht: ' + order.join(', '));
   const dot = await p.$eval('.cat .cat-dot', (e) => getComputedStyle(e).backgroundColor);
