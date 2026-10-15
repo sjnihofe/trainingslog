@@ -6,6 +6,9 @@ import ExercisePicker from './ExercisePicker';
 import { IconLeft, IconPlus, IconRight } from './Icons';
 import { addDays, api, CAT_COLOR, CATS, fmtDate, fmtSets, todayISO, RUN_LABEL, type Run } from '@/lib/format';
 import { RunStats } from './RunCard';
+import { HealthCardBody } from './HealthStats';
+import { IconWatch } from './Icons';
+import type { HealthW } from '@/lib/format';
 import type { Entry, Exercise } from './types';
 import { setSwipeDir, takeSwipeDir, useSwipe } from './useSwipe';
 
@@ -15,6 +18,7 @@ export default function DayView({ date }: { date: string }) {
   const router = useRouter();
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [runs, setRuns] = useState<Run[]>([]);
+  const [health, setHealth] = useState<HealthW[]>([]);
   const [note, setNote] = useState('');
   const [savedNote, setSavedNote] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -26,6 +30,7 @@ export default function DayView({ date }: { date: string }) {
     const [day, ex] = await Promise.all([api(`/api/day/${date}`), api<Exercise[]>('/api/exercises')]);
     setEntries(day.entries);
     setRuns(day.runs ?? []);
+    setHealth(day.health ?? []);
     setNote(day.note ?? '');
     setSavedNote(day.note ?? '');
     setExercises(ex);
@@ -115,6 +120,24 @@ export default function DayView({ date }: { date: string }) {
               </section>
             );
           })}
+      {health.length > 0 && (
+        <>
+          <div className="label">Apple Watch</div>
+          {health.map((h) => (
+            <div key={h.id} className="card watch-card">
+              <div className="row" style={{ marginBottom: 8 }}>
+                <span className="watch-badge"><IconWatch />{h.workout_type || 'Training'}</span>
+                <span className="faint small tnum">
+                  {new Date(h.start_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                  {h.end_time ? `–${new Date(h.end_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}` : ' · läuft'}
+                </span>
+                <button className="faint small" style={{ marginLeft: 'auto' }} onClick={async () => { await api(`/api/health/workouts?id=${h.id}`, { method: 'DELETE' }); load(); }}>Entfernen</button>
+              </div>
+              {h.end_time ? <HealthCardBody h={h} /> : <p className="faint small" style={{ margin: 0 }}>Training läuft noch …</p>}
+            </div>
+          ))}
+        </>
+      )}
       {runs.length > 0 && (
         <>
           <div className="label">Laufen · Strava</div>

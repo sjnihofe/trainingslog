@@ -4,7 +4,7 @@ import WorkoutCard, { type Workout } from '@/components/WorkoutCard';
 import CalendarView from '@/components/CalendarView';
 import StatsView from '@/components/StatsView';
 import RunCard from '@/components/RunCard';
-import { addDays, api, fmtDate, todayISO, type Run } from '@/lib/format';
+import { addDays, api, fmtDate, todayISO, type HealthW, type Run } from '@/lib/format';
 
 type View = 'liste' | 'kalender' | 'auswertung';
 const KEY = 'tl_history_view';
@@ -13,12 +13,25 @@ export default function Verlauf() {
   const [data, setData] = useState<Workout[] | null>(null);
   const [view, setViewState] = useState<View>('liste');
   const [runs, setRuns] = useState<Run[]>([]);
+  const [raw, setRaw] = useState<Workout[] | null>(null);
+  const [health, setHealth] = useState<HealthW[]>([]);
 
   useEffect(() => {
     try { const v = localStorage.getItem(KEY) as View | null; if (v) setViewState(v); } catch {}
-    api<Workout[]>('/api/workouts').then(setData).catch(() => setData([]));
+    api<Workout[]>('/api/workouts').then(setRaw).catch(() => setRaw([]));
+    api<HealthW[]>('/api/health/workouts').then(setHealth).catch(() => {});
     api<Run[]>('/api/runs').then(setRuns).catch(() => {});
   }, []);
+  // Watch-Trainings an den Trainingstag hängen; Tage nur mit Watch-Training als eigene Einträge
+  useEffect(() => {
+    if (!raw) return;
+    const byDate = new Map<string, HealthW[]>();
+    for (const h of health) if (h.date) byDate.set(h.date, [...(byDate.get(h.date) ?? []), h]);
+    const merged = raw.map((w) => ({ ...w, health: byDate.get(w.date) }));
+    for (const [date, hs] of byDate) if (!raw.some((w) => w.date === date)) merged.push({ date, note: null, entries: [], health: hs });
+    merged.sort((a, b) => (a.date < b.date ? 1 : -1));
+    setData(merged);
+  }, [raw, health]);
   const setView = (v: View) => { setViewState(v); try { localStorage.setItem(KEY, v); } catch {} };
 
   const stats = useMemo(() => {

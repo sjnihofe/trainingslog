@@ -9,6 +9,7 @@ const PUBLIC = new Set([
   '/api/auth/passkey/auth-verify',
   '/manifest.webmanifest',
   '/api/strava/cron', // prüft CRON_SECRET selbst
+  '/api/health/ingest', // prüft persönlichen Schlüssel selbst
 ]);
 
 export async function middleware(req: NextRequest) {

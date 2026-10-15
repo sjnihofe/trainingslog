@@ -6,6 +6,7 @@ import type { Exercise } from '@/components/types';
 import { IconFace } from '@/components/Icons';
 import InstallCard from '@/components/InstallCard';
 import StravaCard from '@/components/StravaCard';
+import WatchCard from '@/components/WatchCard';
 
 type Passkey = { id: string; device_name: string; created_at: string; last_used: string | null };
 
@@ -107,6 +108,7 @@ export default function Mehr() {
       </form>
 
       <div className="label">Verknüpfungen</div>
+      <WatchCard />
       <StravaCard />
 
       <div className="label">Übungen verwalten</div>

@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { CAT_COLOR, fmtDate, fmtSets, type WSet } from '@/lib/format';
+import { CAT_COLOR, fmtDate, fmtSets, type HealthW, type WSet } from '@/lib/format';
+import { HealthLine } from './HealthStats';
 
-export type Workout = { date: string; note: string | null; entries: { name: string; category: string; sets: WSet[] }[] };
+export type Workout = { date: string; note: string | null; entries: { name: string; category: string; sets: WSet[] }[]; health?: HealthW[] };
 
 export default function WorkoutCard({ w }: { w: Workout }) {
   return (
@@ -9,7 +10,7 @@ export default function WorkoutCard({ w }: { w: Workout }) {
       <div className="row" style={{ marginBottom: 6 }}>
         <b>{fmtDate(w.date, { weekday: 'short', day: 'numeric', month: 'short' })}</b>
         <span className="faint small" style={{ marginLeft: 'auto' }}>
-          {w.entries.length ? `${w.entries.length} ${w.entries.length === 1 ? 'Übung' : 'Übungen'}` : ''}
+          {w.entries.length ? `${w.entries.length} ${w.entries.length === 1 ? 'Übung' : 'Übungen'}` : w.health?.length ? 'Apple Watch' : ''}
         </span>
       </div>
       {w.entries.map((e, i) => (
@@ -20,6 +21,7 @@ export default function WorkoutCard({ w }: { w: Workout }) {
         </div>
       ))}
       {w.note && <div className="muted small" style={{ marginTop: 4 }}>{w.note}</div>}
+      {w.health?.map((h) => <HealthLine key={h.id} h={h} />)}
     </Link>
   );
 }

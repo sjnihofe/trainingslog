@@ -110,3 +110,13 @@ export function fmtPace(movingS: number, distanceM: number) {
   return `${m}:${String(s).padStart(2, '0')} /km`;
 }
 export const RUN_LABEL: Record<string, string> = { Run: 'Lauf', TrailRun: 'Traillauf', VirtualRun: 'Laufband' };
+
+// ---- Apple Watch (über Kurzbefehle) ----
+export type HealthW = { id: number; date?: string; start_time: string; end_time: string | null; start_estimated: boolean; workout_type: string | null; duration_s: number | null; active_kcal: number | null; avg_hr: number | null; max_hr: number | null; hr_count: number };
+export function fmtHealth(h: HealthW) {
+  const parts: string[] = [];
+  if (h.duration_s) parts.push(`${Math.round(h.duration_s / 60)} min`);
+  if (h.active_kcal !== null) parts.push(`${Math.round(h.active_kcal)} kcal`);
+  if (h.avg_hr !== null) parts.push(`Ø ${Math.round(h.avg_hr)}${h.max_hr !== null ? `/${Math.round(h.max_hr)}` : ''} bpm`);
+  return parts.join(' · ');
+}

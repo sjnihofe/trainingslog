@@ -21,7 +21,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ date: s
   const runs = await sql`select strava_id::text as id, name, sport_type, distance_m::float as distance_m, moving_time_s,
       elevation_gain_m::float as elevation_gain_m, avg_hr::float as avg_hr
     from runs where user_id = ${uid} and start_date = ${date} order by start_time`;
-  return json({ date, note: w[0]?.note ?? '', entries, runs });
+  const health = await sql`select id, start_time::text, end_time::text, start_estimated, workout_type, duration_s,
+      active_kcal::float as active_kcal, avg_hr::float as avg_hr, max_hr::float as max_hr, hr_count
+    from health_workouts where user_id = ${uid} and (start_time at time zone 'Europe/Berlin')::date = ${date} order by start_time`;
+  return json({ date, note: w[0]?.note ?? '', entries, runs, health });
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ date: string }> }) {

@@ -118,6 +118,24 @@ export default function StatsView({ workouts, runs }: { workouts: Workout[]; run
           <div className="stat"><b>{num(Math.round(perWeek * 10) / 10)}</b><span>Ø pro Woche</span></div>
           <div className="stat"><b style={{ color: diff > 0 ? 'var(--ok)' : diff < 0 ? 'var(--danger)' : undefined }}>{diff > 0 ? '+' : ''}{diff}</b><span>vs. {prev.title}</span></div>
         </div>
+        {(() => {
+          const hs = wIn.flatMap((w) => w.health ?? []).filter((h) => h.end_time);
+          if (!hs.length) return null;
+          const kcal = hs.reduce((a, h) => a + (h.active_kcal ?? 0), 0);
+          const hrN = hs.reduce((a, h) => a + h.hr_count, 0);
+          const hrAvg = hrN ? hs.reduce((a, h) => a + (h.avg_hr ?? 0) * h.hr_count, 0) / hrN : null;
+          const min = hs.reduce((a, h) => a + (h.duration_s ?? 0), 0) / 60;
+          return (
+            <>
+              <div className="stats-label"><i style={{ background: 'var(--c-watch)' }} />Apple Watch</div>
+              <div className="stats">
+                <div className="stat"><b>{Math.round(kcal)}</b><span>kcal aktiv</span></div>
+                <div className="stat"><b>{hrAvg ? Math.round(hrAvg) : '–'}</b><span>Ø Puls bpm</span></div>
+                <div className="stat"><b>{min >= 120 ? `${num(Math.round(min / 6) / 10)} h` : `${Math.round(min)} min`}</b><span>{hs.length} {hs.length === 1 ? 'Training' : 'Trainings'}</span></div>
+              </div>
+            </>
+          );
+        })()}
         {hasRuns && (
           <>
             <div className="stats-label"><i style={{ background: 'var(--c-run)' }} />Laufen</div>
