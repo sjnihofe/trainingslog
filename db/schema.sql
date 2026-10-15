@@ -87,3 +87,29 @@ CREATE TABLE IF NOT EXISTS runs (
   updated_at       timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS runs_user_date ON runs (user_id, start_date);
+
+-- Apple Watch über iPhone-Kurzbefehle
+CREATE TABLE IF NOT EXISTS api_tokens (
+  user_id    integer PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  token_hash text NOT NULL UNIQUE,          -- sha256 des Schlüssels, Klartext wird nie gespeichert
+  created_at timestamptz NOT NULL DEFAULT now(),
+  last_used  timestamptz
+);
+
+CREATE TABLE IF NOT EXISTS health_workouts (
+  id              serial PRIMARY KEY,
+  user_id         integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  start_time      timestamptz NOT NULL,
+  end_time        timestamptz,
+  start_estimated boolean NOT NULL DEFAULT false,
+  workout_type    text,
+  duration_s      int,
+  active_kcal     numeric(7,1),
+  avg_hr          numeric(5,1),
+  max_hr          numeric(5,1),
+  hr_count        int NOT NULL DEFAULT 0,
+  source          text NOT NULL DEFAULT 'apple-watch',
+  updated_at      timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS health_user_start ON health_workouts (user_id, start_time);
+CREATE INDEX IF NOT EXISTS health_user_end ON health_workouts (user_id, end_time);
