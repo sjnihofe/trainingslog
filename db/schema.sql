@@ -7,15 +7,27 @@ CREATE TABLE IF NOT EXISTS users (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower ON users (lower(email));
 
+-- Kategorien pro Konto (frei anlegbar, Reihenfolge über position)
+CREATE TABLE IF NOT EXISTS categories (
+  id          serial PRIMARY KEY,
+  user_id     integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name        text NOT NULL,
+  color       text NOT NULL DEFAULT '#8d95a3',
+  position    integer NOT NULL DEFAULT 0,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS categories_user_name ON categories (user_id, lower(name));
+
 CREATE TABLE IF NOT EXISTS exercises (
   id          serial PRIMARY KEY,
   user_id     integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name        text NOT NULL,
-  category    text NOT NULL CHECK (category IN ('Beine','Rücken','Brust','Schulter','Sonstiges')),
+  category_id integer NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
   archived    boolean NOT NULL DEFAULT false,
   favorite    boolean NOT NULL DEFAULT false,   -- Standardübung
   created_at  timestamptz NOT NULL DEFAULT now()
 );
+CREATE INDEX IF NOT EXISTS exercises_category_idx ON exercises (category_id);
 CREATE UNIQUE INDEX IF NOT EXISTS exercises_user_name ON exercises (user_id, lower(name));
 
 CREATE TABLE IF NOT EXISTS workouts (
