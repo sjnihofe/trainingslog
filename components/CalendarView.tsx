@@ -5,13 +5,15 @@ import { IconLeft, IconRight } from './Icons';
 import WorkoutCard, { type Workout } from './WorkoutCard';
 import RunCard from './RunCard';
 import { useSwipe } from './useSwipe';
-import { addDays, addMonths, CAT_COLOR, CATS, fmtKm, monthEnd, monthName, monthStart, mondayOf, todayISO, type Run } from '@/lib/format';
+import { useCategories } from '@/lib/useCategories';
+import { addDays, addMonths, fmtKm, monthEnd, monthName, monthStart, mondayOf, todayISO, type Run } from '@/lib/format';
 
 const DOW = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
 export default function CalendarView({ workouts, runs }: { workouts: Workout[]; runs: Run[] }) {
   const router = useRouter();
   const today = todayISO();
+  const cats = useCategories() ?? [];
   const [month, setMonth] = useState(monthStart(today));
   const byDate = useMemo(() => new Map(workouts.map((w) => [w.date, w])), [workouts]);
   const runDates = useMemo(() => new Set(runs.map((r) => r.date)), [runs]);
@@ -50,7 +52,7 @@ export default function CalendarView({ workouts, runs }: { workouts: Workout[]; 
           {days.map((d) => {
             const w = byDate.get(d);
             const run = runDates.has(d);
-            const cats = w ? CATS.filter((c) => w.entries.some((e) => e.category === c)) : [];
+            const dayCats = w ? cats.filter((c) => w.entries.some((e) => e.category_id === c.id)) : [];
             return (
               <button
                 key={d}
@@ -60,8 +62,8 @@ export default function CalendarView({ workouts, runs }: { workouts: Workout[]; 
               >
                 {Number(d.slice(8))}
                 <span className="cal-dots">
-                  {cats.map((c) => <i key={c} style={{ background: CAT_COLOR[c] }} />)}
-                  {w && cats.length === 0 && <i style={{ background: 'var(--faint)' }} />}
+                  {dayCats.map((c) => <i key={c.id} style={{ background: c.color }} />)}
+                  {w && dayCats.length === 0 && <i style={{ background: 'var(--faint)' }} />}
                 </span>
                 {run && <span className="cal-run" />}
               </button>
@@ -70,7 +72,7 @@ export default function CalendarView({ workouts, runs }: { workouts: Workout[]; 
         </div>
       </div>
       <div className="legend">
-        {CATS.map((c) => <span key={c}><i style={{ background: CAT_COLOR[c] }} />{c}</span>)}
+        {cats.map((c) => <span key={c.id}><i style={{ background: c.color }} />{c.name}</span>)}
         <span><i className="run-mark" />Laufen</span>
       </div>
       {month !== monthStart(today) && (

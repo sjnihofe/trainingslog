@@ -1,11 +1,12 @@
 'use client';
 import { useMemo, useState } from 'react';
 import Sheet from './Sheet';
-import { CAT_COLOR, fmtShort } from '@/lib/format';
+import { fmtShort } from '@/lib/format';
+import type { Category } from '@/lib/useCategories';
 import type { Exercise } from './types';
 
 export default function ExercisePicker({ category, exercises, onPick, onCreate, onClose }: {
-  category: string;
+  category: Pick<Category, 'id' | 'name' | 'color'>;
   exercises: Exercise[];
   onPick: (ex: Exercise) => void;
   onCreate: (name: string) => Promise<void>;
@@ -16,11 +17,11 @@ export default function ExercisePicker({ category, exercises, onPick, onCreate, 
   const query = q.trim().toLowerCase();
 
   const own = useMemo(
-    () => exercises.filter((e) => !e.archived && e.category === category && (!query || e.name.toLowerCase().includes(query))),
+    () => exercises.filter((e) => !e.archived && e.category_id === category.id && (!query || e.name.toLowerCase().includes(query))),
     [exercises, category, query],
   );
   const other = useMemo(
-    () => (query ? exercises.filter((e) => !e.archived && e.category !== category && e.name.toLowerCase().includes(query)) : []),
+    () => (query ? exercises.filter((e) => !e.archived && e.category_id !== category.id && e.name.toLowerCase().includes(query)) : []),
     [exercises, category, query],
   );
   const exact = exercises.some((e) => e.name.toLowerCase() === query);
@@ -38,7 +39,7 @@ export default function ExercisePicker({ category, exercises, onPick, onCreate, 
   return (
     <Sheet
       onClose={onClose}
-      title={<><span className="cat-dot" style={{ background: CAT_COLOR[category] }} />{category}</>}
+      title={<><span className="cat-dot" style={{ background: category.color }} />{category.name}</>}
     >
       <input
         className="search"
@@ -53,7 +54,7 @@ export default function ExercisePicker({ category, exercises, onPick, onCreate, 
           disabled={busy}
           onClick={async () => { setBusy(true); try { await onCreate(q.trim()); } finally { setBusy(false); } }}
         >
-          <b>+ Neue Übung:</b> „{q.trim()}“ in {category}
+          <b>+ Neue Übung:</b> „{q.trim()}“ in {category.name}
         </button>
       )}
       {!query && <button className="newbtn" onClick={() => (document.querySelector('.search') as HTMLInputElement)?.focus()}><b>+</b> Neue Übung hinzufügen</button>}

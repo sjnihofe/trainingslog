@@ -233,3 +233,16 @@ select.field { appearance: none; }
 .steps li { margin-bottom: 8px; }
 .steps code { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--text); background: var(--surface-2); padding: 1px 5px; border-radius: 5px; }
 details.howto summary { cursor: pointer; font-weight: 650; color: var(--text); padding: 6px 0; }
+
+/* Kategorien verwalten */
+.catrow { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.catrow .row { gap: 8px; }
+.catname { margin: 0 !important; height: 42px !important; flex: 1; min-width: 0; }
+.cat-dot.big { width: 22px; height: 22px; border-radius: 50%; flex: none; }
+.iconbtn.small { width: 36px; height: 36px; font-size: 16px; flex: none; }
+.iconbtn:disabled { opacity: .3; }
+.catmore { padding: 10px 0 2px 30px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; }
+.swatch.on { border-color: var(--text); box-shadow: inset 0 0 0 2px var(--surface); }
+.edit-cats { display: block; text-align: center; margin: 4px 0 8px; }

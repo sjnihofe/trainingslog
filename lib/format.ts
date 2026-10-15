@@ -1,15 +1,5 @@
 export type WSet = { reps: number | null; weight: number | null; bodyweight: boolean };
 
-export const CATS = ['Beine', 'Rücken', 'Brust', 'Schulter', 'Sonstiges'] as const;
-export type Cat = (typeof CATS)[number];
-
-export const CAT_COLOR: Record<string, string> = {
-  Beine: 'var(--c-beine)',
-  Rücken: 'var(--c-ruecken)',
-  Brust: 'var(--c-brust)',
-  Schulter: 'var(--c-schulter)',
-  Sonstiges: 'var(--c-sonst)',
-};
 
 export function num(n: number | string | null | undefined) {
   if (n === null || n === undefined || n === '') return '';

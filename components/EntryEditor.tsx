@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Sheet from './Sheet';
 import { IconTrash, IconX } from './Icons';
-import { api, CAT_COLOR, fmtSets, fmtShort, num, type WSet } from '@/lib/format';
+import { api, fmtSets, fmtShort, num, type WSet } from '@/lib/format';
 import type { Entry, Exercise } from './types';
 
 type Row = { reps: string; weight: string };
@@ -13,7 +13,7 @@ const parseR = (s: string) => { const v = parseInt(s, 10); return Number.isFinit
 
 export default function EntryEditor({ date, exercise, entry, onClose, onSaved }: {
   date: string;
-  exercise: Pick<Exercise, 'id' | 'name' | 'category'>;
+  exercise: Pick<Exercise, 'id' | 'name' | 'color'>;
   entry?: Entry;
   onClose: () => void;
   onSaved: (msg: string) => void;
@@ -75,7 +75,7 @@ export default function EntryEditor({ date, exercise, entry, onClose, onSaved }:
   return (
     <Sheet
       onClose={onClose}
-      title={<><span className="cat-dot" style={{ background: CAT_COLOR[exercise.category] }} />{exercise.name}</>}
+      title={<><span className="cat-dot" style={{ background: exercise.color }} />{exercise.name}</>}
       footer={
         <>
           {entry && <button className="btn danger" onClick={remove} disabled={busy} aria-label="Löschen"><IconTrash /></button>}

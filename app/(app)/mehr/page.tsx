@@ -1,7 +1,9 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { startRegistration } from '@simplewebauthn/browser';
-import { api, CATS, fmtShort } from '@/lib/format';
+import { api, fmtShort } from '@/lib/format';
+import CategoryManager from '@/components/CategoryManager';
+import { useCategories } from '@/lib/useCategories';
 import type { Exercise } from '@/components/types';
 import { IconFace } from '@/components/Icons';
 import InstallCard from '@/components/InstallCard';
@@ -18,6 +20,7 @@ export default function Mehr() {
   const [pwMsg, setPwMsg] = useState<{ ok?: string; err?: string }>({});
   const [showArchived, setShowArchived] = useState(false);
   const [me, setMe] = useState<{ email: string } | null>(null);
+  const cats = useCategories();
 
   const load = useCallback(() => {
     api<Passkey[]>('/api/auth/passkey/list').then(setKeys).catch(() => {});
@@ -111,6 +114,9 @@ export default function Mehr() {
       <WatchCard />
       <StravaCard />
 
+      <div className="label">Kategorien</div>
+      <CategoryManager onChange={load} />
+
       <div className="label">Übungen verwalten</div>
       <div className="card">
         <p className="muted small" style={{ marginTop: 0 }}>★ = Standardübung (im Fortschritt hervorgehoben). Außerdem Kategorie ändern, umbenennen oder ausblenden – ausgeblendete Übungen bleiben im Verlauf erhalten.</p>
@@ -124,8 +130,8 @@ export default function Mehr() {
             />
             <div className="row">
               <button className={`star ${e.favorite ? 'on' : ''}`} onClick={() => patchEx(e.id, { favorite: !e.favorite })} aria-label="Standardübung">★</button>
-              <select className="field" style={{ marginBottom: 0, height: 40, flex: 1 }} value={e.category} onChange={(ev) => patchEx(e.id, { category: ev.target.value })}>
-                {CATS.map((c) => <option key={c}>{c}</option>)}
+              <select className="field" style={{ marginBottom: 0, height: 40, flex: 1 }} value={e.category_id} onChange={(ev) => patchEx(e.id, { categoryId: Number(ev.target.value) } as any)}>
+                {cats?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
               <span className="faint small tnum" style={{ minWidth: 34, textAlign: 'right' }}>{e.uses}×</span>
               <button className="btn" style={{ height: 40, fontSize: 14 }} onClick={() => patchEx(e.id, { archived: !e.archived })}>{e.archived ? 'Einblenden' : 'Ausblenden'}</button>

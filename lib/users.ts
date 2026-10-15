@@ -13,7 +13,9 @@ const STARTER: [string, string, boolean][] = [
 ];
 
 export async function seedExercises(uid: number) {
-  await sql`insert into exercises (user_id, name, category, favorite)
-    select ${uid}, t.n, t.c, t.f from unnest(${STARTER.map((s) => s[0])}::text[], ${STARTER.map((s) => s[1])}::text[], ${STARTER.map((s) => s[2])}::bool[]) as t(n, c, f)
+  // Kategorien müssen vorher angelegt sein (seedCategories) – Zuordnung über den Namen
+  await sql`insert into exercises (user_id, name, category_id, favorite)
+    select ${uid}, t.n, c.id, t.f from unnest(${STARTER.map((s) => s[0])}::text[], ${STARTER.map((s) => s[1])}::text[], ${STARTER.map((s) => s[2])}::bool[]) as t(n, c, f)
+    join categories c on c.user_id = ${uid} and c.name = t.c
     on conflict do nothing`;
 }

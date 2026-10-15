@@ -3,6 +3,7 @@ import { sql } from '@/lib/db';
 import { hashPassword } from '@/lib/password';
 import { bad, withSession } from '@/lib/http';
 import { normEmail, seedExercises, validEmail } from '@/lib/users';
+import { seedCategories } from '@/lib/categories';
 
 export const runtime = 'nodejs';
 
@@ -19,6 +20,7 @@ export async function POST(req: Request) {
   }
   const rows = (await sql`insert into users (email, password_hash) values (${email}, ${hashPassword(password)}) returning id`) as any[];
   const uid = rows[0].id as number;
+  await seedCategories(uid);
   await seedExercises(uid);
   return withSession(NextResponse.json({ ok: true }), uid);
 }

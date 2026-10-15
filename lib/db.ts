@@ -22,7 +22,6 @@ export function normalizeSets(input: unknown): SetRow[] {
     .filter((s) => s.reps !== null || s.weight !== null || s.bodyweight);
 }
 
-export const CATEGORIES = ['Beine', 'Rücken', 'Brust', 'Schulter', 'Sonstiges'] as const;
 
 export function isISODate(s: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s + 'T00:00:00Z'));

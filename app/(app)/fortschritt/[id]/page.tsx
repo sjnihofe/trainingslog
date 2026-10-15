@@ -3,7 +3,7 @@ import { use, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import ProgressChart, { type Point } from '@/components/ProgressChart';
 import { IconLeft } from '@/components/Icons';
-import { api, CAT_COLOR, fmtDate, fmtSets, fmtShort, num, type WSet } from '@/lib/format';
+import { api, fmtDate, fmtSets, fmtShort, num, type WSet } from '@/lib/format';
 
 type Session = { id: number; date: string; sets: WSet[] };
 type Metric = 'top' | 'e1rm' | 'reps' | 'volume';
@@ -12,7 +12,7 @@ const LABEL: Record<Metric, string> = { top: 'Top-Gewicht', e1rm: '1RM (geschät
 
 export default function ExerciseProgress({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [data, setData] = useState<{ exercise: { name: string; category: string; favorite: boolean }; sessions: Session[] } | null>(null);
+  const [data, setData] = useState<{ exercise: { name: string; category: string; color: string; favorite: boolean }; sessions: Session[] } | null>(null);
   const [metric, setMetric] = useState<Metric | null>(null);
   useEffect(() => { api(`/api/exercises/${id}/history`).then(setData); }, [id]);
 
@@ -33,7 +33,7 @@ export default function ExerciseProgress({ params }: { params: Promise<{ id: str
 
   if (!data) return <><div className="skeleton" style={{ height: 40, width: 160 }} /><div className="skeleton" style={{ height: 200 }} /></>;
 
-  const color = CAT_COLOR[data.exercise.category];
+  const color = data.exercise.color;
   const best = points.length ? points.reduce((a, b) => (b.value >= a.value ? b : a)) : null;
   const first = points[0], last = points[points.length - 1];
   const unit = m === 'reps' ? 'Wdh' : 'kg';

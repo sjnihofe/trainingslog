@@ -10,12 +10,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ date: s
   if (!isISODate(date)) return bad('Ungültiges Datum');
   const w = (await sql`select id, note from workouts where user_id = ${uid} and date = ${date}`) as any[];
   const entries = await sql`
-    select en.id, en.exercise_id, ex.name, ex.category,
+    select en.id, en.exercise_id, ex.name, ex.category_id, c.name as category, c.color,
       coalesce((select json_agg(json_build_object('reps', s.reps, 'weight', s.weight, 'bodyweight', s.bodyweight) order by s.set_no)
                 from sets s where s.entry_id = en.id), '[]'::json) as sets
     from entries en
     join workouts w on w.id = en.workout_id
     join exercises ex on ex.id = en.exercise_id
+    join categories c on c.id = ex.category_id
     where w.user_id = ${uid} and w.date = ${date}
     order by en.id`;
   const runs = await sql`select strava_id::text as id, name, sport_type, distance_m::float as distance_m, moving_time_s,
