@@ -33,7 +33,7 @@ export default function FitnessCard({ timeline, trend }: {
     <div className="card fit-card">
       <div className="row" style={{ alignItems: 'flex-start' }}>
         <div>
-          <div className="fit-label">Fitnessniveau</div>
+          <div className="fit-label">Fitnessniveau <span className="fit-hint">100 = dein Start</span></div>
           <div className="fit-value tnum">{num(Math.round(c.value))}</div>
           <div className={`fit-trend ${st.cls}`}>
             {st.arrow} {trend.delta !== null ? `${trend.delta > 0 ? '+' : ''}${num(trend.delta)} in 4 Wochen · ` : ''}{st.label}

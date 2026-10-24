@@ -291,3 +291,4 @@ details.howto summary { cursor: pointer; font-weight: 650; color: var(--text); p
 .legend-pct.down { color: var(--danger); }
 .legend-link { color: var(--faint); width: 32px; height: 40px; display: grid; place-items: center; }
 .legend-link svg { width: 18px; height: 18px; }
+.fit-hint { font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--faint); margin-left: 6px; }

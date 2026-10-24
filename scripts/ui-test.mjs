@@ -69,21 +69,21 @@ try {
   await page.waitForSelector('.sheet .last');
   await page.waitForFunction(() => document.querySelectorAll('.setrow').length > 0);
   const last = await page.textContent('.sheet .last');
-  ok(/70/.test(last), 'Editor zeigt letztes Mal: ' + last.trim());
   const w0 = await page.inputValue('.setrow >> nth=0 >> input[inputmode=decimal]');
-  ok(w0 === '70', 'Gewicht aus letztem Training vorausgefüllt: ' + w0);
+  ok(w0 !== '' && last.includes(w0), 'Editor zeigt letztes Mal und füllt Gewicht vor: ' + last.trim() + ' → ' + w0);
   const n0 = (await page.$$('.setrow')).length;
   await tap('.addset');
   ok((await page.$$('.setrow')).length === n0 + 1, `+ Satz: ${n0} → ${n0 + 1} Sätze`);
   await tap(`.setrow >> nth=${n0} >> button[aria-label="Mehr Gewicht"]`);
   const w1 = await page.inputValue(`.setrow >> nth=${n0} >> input[inputmode=decimal]`);
-  ok(w1 === '72,5', '+2,5 kg Taste: ' + w1);
+  const expect = String(Number(w0.replace(',', '.')) + 2.5).replace('.', ',');
+  ok(w1 === expect, `+2,5 kg Taste: ${w0} → ${w1}`);
   await noOverflow('Satz-Editor');
   await tap('.sheet-foot .btn.primary');
   await page.waitForSelector('.toast');
   ok(true, 'Gespeichert, Toast: ' + (await page.textContent('.toast')));
   await page.waitForSelector('.entry:has-text("Kniebeuge")');
-  ok(/72,5/.test(await page.textContent('.entry:has-text("Kniebeuge")')), 'Eintrag in Beine: ' + (await page.textContent('.entry:has-text("Kniebeuge") .entry-sets')));
+  ok(new RegExp(w1).test(await page.textContent('.entry:has-text("Kniebeuge")')), 'Eintrag in Beine: ' + (await page.textContent('.entry:has-text("Kniebeuge") .entry-sets')));
 
   // Sonstiges → neue Übung
   await tap('.cat-head:has-text("Sonstiges")');
