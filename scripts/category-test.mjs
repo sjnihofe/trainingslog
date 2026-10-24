@@ -63,10 +63,11 @@ try {
   await p.waitForSelector('.cat:has-text("Rumpf") .entry:has-text("Plank Test")');
   ok(true, 'Übung in „Rumpf“ angelegt und gespeichert');
   await p.goto(BASE + '/fortschritt');
-  await p.click('.chip:has-text("Alle")');
-  await p.waitForSelector('.chip:has-text("Rumpf")');
-  await p.click('.chip:has-text("Rumpf")');
-  ok((await p.$$eval('.entry-name', (e) => e.map((x) => x.textContent))).join() === 'Plank Test', 'Fortschritt-Filter nach eigener Kategorie');
+  await p.waitForSelector('.cat-toggle:has-text("Rumpf")');
+  await p.click('.chips .chip:has-text("Keine")');
+  await p.click('.cat-toggle:has-text("Rumpf")');
+  await p.waitForSelector('.legend-name');
+  ok((await p.$$eval('.legend-name', (e) => e.map((x) => x.textContent))).join() === 'Plank Test', 'Fortschritt: eigene Kategorie ein-/ausschaltbar');
 
   // Doppelter Name, Löschen mit Verschieben
   const dup = await api('/api/categories', 'POST', { name: 'rumpf' });
