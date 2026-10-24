@@ -3,7 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import EntryEditor from './EntryEditor';
 import ExercisePicker from './ExercisePicker';
-import { IconLeft, IconPlus, IconRight } from './Icons';
+import { IconLeft, IconPlus, IconRight, IconTrash } from './Icons';
+import { usePendingDelete } from './usePendingDelete';
 import { addDays, api, fmtDate, fmtSets, todayISO, RUN_LABEL, type Run } from '@/lib/format';
 import Link from 'next/link';
 import { useCategories, type Category } from '@/lib/useCategories';
@@ -27,6 +28,7 @@ export default function DayView({ date }: { date: string }) {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [sheet, setSheet] = useState<Sheet>(null);
   const [toast, setToast] = useState('');
+  const [confirmId, setConfirmId] = useState<number | null>(null);
   const today = todayISO();
 
   const load = useCallback(async () => {
@@ -39,7 +41,8 @@ export default function DayView({ date }: { date: string }) {
     setExercises(ex);
   }, [date]);
 
-  useEffect(() => { setEntries(null); load().catch(() => setEntries([])); }, [load]);
+  useEffect(() => { setEntries(null); setConfirmId(null); load().catch(() => setEntries([])); }, [load]);
+  const del = usePendingDelete(() => { load().catch(() => {}); }, setToast);
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2200); return () => clearTimeout(t); }, [toast]);
 
   // Android-Zurück-Taste / Zurück-Geste schließt das offene Sheet statt die Seite zu verlassen
@@ -73,7 +76,8 @@ export default function DayView({ date }: { date: string }) {
     setToast('Notiz gespeichert');
   }
 
-  const total = entries?.length ?? 0;
+  const visible = entries?.filter((e) => !del.ids.has(e.id)) ?? null;
+  const total = visible?.length ?? 0;
 
   return (
     <>
@@ -99,10 +103,10 @@ export default function DayView({ date }: { date: string }) {
         )}
       </div>
 
-      {entries === null || cats === null
+      {visible === null || cats === null
         ? [0, 1, 2, 3, 4].map((c) => <div key={c} className="skeleton" />)
         : cats.map((cat) => {
-            const list = entries.filter((e) => e.category_id === cat.id);
+            const list = visible.filter((e) => e.category_id === cat.id);
             return (
               <section key={cat.id} className="cat">
                 <button className="cat-head" onClick={() => setSheet({ kind: 'pick', category: cat })}>
@@ -111,14 +115,26 @@ export default function DayView({ date }: { date: string }) {
                   {list.length === 0 && <span className="cat-empty">Übung wählen</span>}
                   <span className="cat-add"><IconPlus /></span>
                 </button>
-                {list.map((e) => (
-                  <button key={e.id} className="entry" onClick={() => setSheet({ kind: 'edit', exercise: { id: e.exercise_id, name: e.name, color: e.color }, entry: e })}>
-                    <div>
-                      <div className="entry-name">{e.name}</div>
+                {list.map((e) => confirmId === e.id ? (
+                  <div key={e.id} className="entry entry-confirm">
+                    <div style={{ minWidth: 0 }}>
+                      <div className="entry-name">„{e.name}“ entfernen?</div>
                       <div className="entry-sets tnum">{fmtSets(e.sets)}</div>
                     </div>
-                    <span className="chev"><IconRight /></span>
-                  </button>
+                    <button className="mini" onClick={() => setConfirmId(null)}>Abbrechen</button>
+                    <button className="mini danger" onClick={() => { setConfirmId(null); del.remove(e.id, e.name); }}>Entfernen</button>
+                  </div>
+                ) : (
+                  <div key={e.id} className="entry-row">
+                    <button className="entry" onClick={() => setSheet({ kind: 'edit', exercise: { id: e.exercise_id, name: e.name, color: e.color }, entry: e })}>
+                      <div>
+                        <div className="entry-name">{e.name}</div>
+                        <div className="entry-sets tnum">{fmtSets(e.sets)}</div>
+                      </div>
+                      <span className="chev"><IconRight /></span>
+                    </button>
+                    <button className="entry-del" onClick={() => setConfirmId(e.id)} aria-label={`${e.name} aus dem Training entfernen`}><IconTrash /></button>
+                  </div>
                 ))}
               </section>
             );
@@ -189,9 +205,10 @@ export default function DayView({ date }: { date: string }) {
           entry={sheet.entry}
           onClose={closeSheet}
           onSaved={(msg) => { setSheet(null); setToast(msg); load(); }}
+          onRemove={(entry) => { setSheet(null); del.remove(entry.id, entry.name); }}
         />
       )}
-      {toast && <div className="toast">{toast}</div>}
+      {del.toast ?? (toast && <div className="toast">{toast}</div>)}
     </>
   );
 }

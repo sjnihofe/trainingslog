@@ -11,13 +11,15 @@ const toRows = (sets: WSet[]): Row[] => sets.map((s) => ({ reps: s.reps === null
 const parseW = (s: string) => { const v = Number(s.replace(',', '.')); return s.trim() === '' || !Number.isFinite(v) ? null : v; };
 const parseR = (s: string) => { const v = parseInt(s, 10); return Number.isFinite(v) ? v : null; };
 
-export default function EntryEditor({ date, exercise, entry, onClose, onSaved }: {
+export default function EntryEditor({ date, exercise, entry, onClose, onSaved, onRemove }: {
   date: string;
   exercise: Pick<Exercise, 'id' | 'name' | 'color'>;
   entry?: Entry;
   onClose: () => void;
   onSaved: (msg: string) => void;
+  onRemove?: (entry: Entry) => void;
 }) {
+  const [confirmDel, setConfirmDel] = useState(false);
   const [rows, setRows] = useState<Row[] | null>(entry ? toRows(entry.sets) : null);
   const [bw, setBw] = useState<boolean>(entry ? entry.sets.every((s) => s.bodyweight) : false);
   const [last, setLast] = useState<{ date: string; sets: WSet[] } | null>(null);
@@ -65,11 +67,11 @@ export default function EntryEditor({ date, exercise, entry, onClose, onSaved }:
     } catch (e: any) { setErr(e.message); setBusy(false); }
   }
 
-  async function remove() {
-    if (!entry) return;
-    setBusy(true);
-    try { await api(`/api/entries/${entry.id}`, { method: 'DELETE' }); onSaved('Gelöscht'); }
-    catch (e: any) { setErr(e.message); setBusy(false); }
+  // Zweistufig: erstes Tippen fragt nach, zweites entfernt (mit Rückgängig in der Tagesansicht)
+  function remove() {
+    if (!entry || !onRemove) return;
+    if (!confirmDel) { setConfirmDel(true); return; }
+    onRemove(entry);
   }
 
   return (
@@ -78,8 +80,13 @@ export default function EntryEditor({ date, exercise, entry, onClose, onSaved }:
       title={<><span className="cat-dot" style={{ background: exercise.color }} />{exercise.name}</>}
       footer={
         <>
-          {entry && <button className="btn danger" onClick={remove} disabled={busy} aria-label="Löschen"><IconTrash /></button>}
-          <button className="btn primary" onClick={save} disabled={busy || !rows}>{busy ? 'Speichert …' : 'Speichern'}</button>
+          {entry && onRemove && (confirmDel ? (
+            <>
+              <button className="btn" onClick={() => setConfirmDel(false)}>Abbrechen</button>
+              <button className="btn danger-solid" onClick={remove}>Übung entfernen</button>
+            </>
+          ) : <button className="btn danger" onClick={remove} disabled={busy} aria-label="Übung entfernen"><IconTrash /></button>)}
+          {!confirmDel && <button className="btn primary" onClick={save} disabled={busy || !rows}>{busy ? 'Speichert …' : 'Speichern'}</button>}
         </>
       }
     >

@@ -9,7 +9,7 @@ export async function GET() {
   const rows = await sql`
     select w.date::text as date, w.note,
       coalesce(json_agg(json_build_object(
-        'name', ex.name, 'category', c.name, 'category_id', c.id, 'color', c.color,
+        'id', en.id, 'name', ex.name, 'category', c.name, 'category_id', c.id, 'color', c.color,
         'sets', coalesce((select json_agg(json_build_object('reps', s.reps, 'weight', s.weight, 'bodyweight', s.bodyweight) order by s.set_no)
                           from sets s where s.entry_id = en.id), '[]'::json)
       ) order by en.id) filter (where en.id is not null), '[]'::json) as entries

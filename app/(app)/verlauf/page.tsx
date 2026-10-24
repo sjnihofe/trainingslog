@@ -4,6 +4,7 @@ import WorkoutCard, { type Workout } from '@/components/WorkoutCard';
 import CalendarView from '@/components/CalendarView';
 import StatsView from '@/components/StatsView';
 import RunCard from '@/components/RunCard';
+import { usePendingDelete } from '@/components/usePendingDelete';
 import { addDays, api, fmtDate, todayISO, type HealthW, type Run } from '@/lib/format';
 
 type View = 'liste' | 'kalender' | 'auswertung';
@@ -15,6 +16,15 @@ export default function Verlauf() {
   const [runs, setRuns] = useState<Run[]>([]);
   const [raw, setRaw] = useState<Workout[] | null>(null);
   const [health, setHealth] = useState<HealthW[]>([]);
+
+  const [toast, setToast] = useState('');
+  const reload = () => api<Workout[]>('/api/workouts').then(setRaw).catch(() => {});
+  const del = usePendingDelete(reload, setToast);
+  useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2600); return () => clearTimeout(t); }, [toast]);
+  const onRemove = (e: { id?: number; name: string }) => { if (e.id !== undefined) del.remove(e.id, e.name); };
+  // Entfernte (noch rückgängig machbare) Übungen ausblenden; leer gewordene Trainings ohne Notiz/Watch ebenso
+  const shown = useMemo(() => data?.map((w) => ({ ...w, entries: w.entries.filter((e) => e.id === undefined || !del.ids.has(e.id)) }))
+    .filter((w) => w.entries.length || w.note || w.health?.length) ?? null, [data, del.ids]);
 
   useEffect(() => {
     try { const v = localStorage.getItem(KEY) as View | null; if (v) setViewState(v); } catch {}
@@ -35,6 +45,7 @@ export default function Verlauf() {
   const setView = (v: View) => { setViewState(v); try { localStorage.setItem(KEY, v); } catch {} };
 
   const stats = useMemo(() => {
+    const data = shown;
     if (!data) return null;
     const t = todayISO();
     const d30 = addDays(t, -30), d56 = addDays(t, -56);
@@ -43,7 +54,7 @@ export default function Verlauf() {
       last30: data.filter((w) => w.date > d30 && w.date <= t).length,
       perWeek: (data.filter((w) => w.date > d56 && w.date <= t).length / 8).toFixed(1).replace('.', ','),
     };
-  }, [data]);
+  }, [shown]);
 
   let month = '';
   return (
@@ -56,9 +67,9 @@ export default function Verlauf() {
       </div>
 
       {!data && [0, 1, 2, 3].map((i) => <div key={i} className="skeleton" style={{ height: 96 }} />)}
-      {data && view === 'kalender' && <CalendarView workouts={data} runs={runs} />}
-      {data && view === 'auswertung' && <StatsView workouts={data} runs={runs} />}
-      {data && view === 'liste' && (
+      {shown && view === 'kalender' && <CalendarView workouts={shown} runs={runs} onRemove={onRemove} />}
+      {shown && view === 'auswertung' && <StatsView workouts={shown} runs={runs} />}
+      {shown && view === 'liste' && (
         <>
           {stats && (
             <div className="stats">
@@ -67,9 +78,9 @@ export default function Verlauf() {
               <div className="stat"><b>{stats.perWeek}</b><span>pro Woche (8 W.)</span></div>
             </div>
           )}
-          {data.length === 0 && <p className="muted">Noch keine Trainings erfasst.</p>}
+          {shown.length === 0 && <p className="muted">Noch keine Trainings erfasst.</p>}
           {[
-            ...data.map((w) => ({ date: w.date, key: 'w' + w.date, node: <WorkoutCard w={w} /> })),
+            ...shown.map((w) => ({ date: w.date, key: 'w' + w.date, node: <WorkoutCard w={w} onRemove={onRemove} /> })),
             ...runs.map((r) => ({ date: r.date, key: 'r' + r.id, node: <RunCard r={r} /> })),
           ]
             .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : a.key.localeCompare(b.key)))
@@ -80,6 +91,7 @@ export default function Verlauf() {
             })}
         </>
       )}
+      {del.toast ?? (toast && <div className="toast">{toast}</div>)}
     </>
   );
 }

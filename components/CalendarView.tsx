@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { IconLeft, IconRight } from './Icons';
-import WorkoutCard, { type Workout } from './WorkoutCard';
+import WorkoutCard, { type Workout, type WorkoutEntry } from './WorkoutCard';
 import RunCard from './RunCard';
 import { useSwipe } from './useSwipe';
 import { useCategories } from '@/lib/useCategories';
@@ -10,7 +10,7 @@ import { addDays, addMonths, fmtKm, monthEnd, monthName, monthStart, mondayOf, t
 
 const DOW = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
-export default function CalendarView({ workouts, runs }: { workouts: Workout[]; runs: Run[] }) {
+export default function CalendarView({ workouts, runs, onRemove }: { workouts: Workout[]; runs: Run[]; onRemove?: (e: WorkoutEntry) => void }) {
   const router = useRouter();
   const today = todayISO();
   const cats = useCategories() ?? [];
@@ -30,7 +30,7 @@ export default function CalendarView({ workouts, runs }: { workouts: Workout[]; 
 
   // Krafttrainings und Läufe gemeinsam, neueste zuerst
   const items = [
-    ...inMonth.map((w) => ({ date: w.date, key: 'w' + w.date, node: <WorkoutCard key={'w' + w.date} w={w} /> })),
+    ...inMonth.map((w) => ({ date: w.date, key: 'w' + w.date, node: <WorkoutCard key={'w' + w.date} w={w} onRemove={onRemove} /> })),
     ...runsInMonth.map((r) => ({ date: r.date, key: 'r' + r.id, node: <RunCard key={'r' + r.id} r={r} /> })),
   ].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : a.key.localeCompare(b.key)));
 

@@ -29,6 +29,7 @@ const swipe = async (sel, dx, dy = 0) => {
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await page.waitForTimeout(700);
 };
+const dayIds = () => page.evaluate(async (d) => (await (await fetch('/api/day/' + d)).json()).entries.map((e) => e.id + ':' + e.name + ':' + JSON.stringify(e.sets)), D);
 const noOverflow = async (name) => ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `${name}: kein horizontales Scrollen`);
 
 try {
@@ -124,6 +125,20 @@ try {
   await page.waitForSelector('.stat');
   ok((await page.textContent('.card')).includes(NEW), 'Verlauf zeigt das neue Training oben');
   await noOverflow('Verlauf');
+  // Verlauf: Übung entfernen + Rückgängig (nichts wird gelöscht)
+  const before = await dayIds();
+  await tap('.card >> nth=0 >> .card-head-btn:has-text("Bearbeiten")');
+  ok(page.url().endsWith('/verlauf'), 'Bearbeiten öffnet keinen Tag, bleibt im Verlauf');
+  await tap(`.card >> nth=0 >> .line-item:has-text("${NEW}") .line-del`);
+  await tap('.card >> nth=0 >> .line-confirm .mini.danger');
+  await page.waitForSelector('.undo-toast');
+  ok(!(await page.textContent('.card >> nth=0')).includes(NEW) && (await page.textContent('.undo-toast')).includes(NEW), 'Verlauf: Übung ausgeblendet, Toast: ' + (await page.textContent('.undo-toast')));
+  await noOverflow('Verlauf bearbeiten');
+  await tap('.undo-toast button');
+  await page.waitForTimeout(7000);
+  const afterUndo = await dayIds();
+  ok((await page.textContent('.card >> nth=0')).includes(NEW) && JSON.stringify(afterUndo) === JSON.stringify(before), 'Rückgängig: Übung zurück, IDs und Sätze unverändert (' + afterUndo.length + ' Einträge)');
+  await tap('.card >> nth=0 >> .card-head-btn:has-text("Fertig")');
   // Kalender
   await tap('.seg button:has-text("Kalender")');
   await page.waitForSelector('.cal-day');
@@ -216,13 +231,41 @@ try {
   ok(await page.evaluate(() => window.__prompted === true), 'Knopf „App installieren“ öffnet den Android-Installationsdialog');
   await noOverflow('Mehr');
 
-  // Aufräumen
+  // Tagesansicht: Übung über den Papierkorb entfernen (Abbrechen, Rückgängig, endgültig)
   await page.goto(BASE + '/tag/' + D);
-  for (const n of ['Kniebeuge', NEW]) {
-    await tap(`.entry:has-text("${n}")`);
-    await tap('.sheet-foot .btn.danger');
-    await page.waitForSelector(`.entry:has-text("${n}")`, { state: 'detached' });
-  }
+  await page.waitForSelector('.entry-row:has-text("Kniebeuge")');
+  const ids0 = await dayIds();
+  await tap('.entry-row:has-text("Kniebeuge") .entry-del');
+  await tap('.entry-confirm .mini:has-text("Abbrechen")');
+  ok((await page.$('.entry-row:has-text("Kniebeuge")')) !== null, 'Papierkorb → Abbrechen: Übung bleibt');
+  await noOverflow('Tagesansicht mit Papierkorb');
+  await tap('.entry-row:has-text("Kniebeuge") .entry-del');
+  await page.waitForSelector('.entry-confirm');
+  await noOverflow('Bestätigung');
+  await tap('.entry-confirm .mini.danger');
+  await page.waitForSelector('.undo-toast');
+  ok((await page.$('.entry-row:has-text("Kniebeuge")')) === null && (await page.textContent('.pill.accent')).includes('1 Übung'), 'Entfernen: ausgeblendet, Zähler 1 Übung, Toast mit Rückgängig');
+  await tap('.undo-toast button');
+  await page.waitForSelector('.entry-row:has-text("Kniebeuge")');
+  await page.waitForTimeout(7000);
+  ok(JSON.stringify(await dayIds()) === JSON.stringify(ids0), 'Tagesansicht Rückgängig: Daten unverändert');
+  await tap('.entry-row:has-text("Kniebeuge") .entry-del');
+  await tap('.entry-confirm .mini.danger');
+  await page.waitForSelector('.undo-toast', { state: 'detached', timeout: 10000 });
+  const ids1 = await dayIds();
+  ok(ids1.length === 1 && ids1[0].includes(NEW), 'Nach Ablauf endgültig entfernt, andere Übung unverändert: ' + ids1.map((x) => x.split(':')[1]).join(', '));
+  // Editor: zweistufiges Entfernen, danach sofort Seite verlassen → Löschen wird trotzdem abgeschickt
+  await tap(`.entry:has-text("${NEW}")`);
+  await tap('.sheet-foot .btn.danger');
+  await page.waitForSelector('.sheet-foot .btn.danger-solid');
+  ok((await page.$('.sheet')) !== null, 'Editor: erstes Tippen fragt nur nach');
+  await tap('.sheet-foot .btn.danger-solid');
+  await page.waitForSelector('.undo-toast');
+  await tap('.nav a:has-text("Verlauf")');
+  await page.waitForTimeout(1500);
+  ok((await dayIds()).length === 0, 'Seite verlassen während Rückgängig-Zeit: Löschen wurde ausgeführt');
+  await page.goto(BASE + '/tag/' + D);
+  await page.waitForSelector('.cat');
   await page.fill('textarea.note', '');
   await tap('.title');
   await page.waitForTimeout(800);
