@@ -246,3 +246,48 @@ details.howto summary { cursor: pointer; font-weight: 650; color: var(--text); p
 .swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; }
 .swatch.on { border-color: var(--text); box-shadow: inset 0 0 0 2px var(--surface); }
 .edit-cats { display: block; text-align: center; margin: 4px 0 8px; }
+
+/* Fortschritt v2 */
+.fit-card { padding: 16px; }
+.fit-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.fit-value { font-size: 44px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; margin: 2px 0 4px; }
+.fit-trend { font-size: 14px; font-weight: 650; }
+.fit-trend.up { color: var(--ok); }
+.fit-trend.down { color: var(--danger); }
+.fit-trend.flat { color: var(--muted); }
+.fit-spark { width: 120px; height: 36px; margin-left: auto; margin-top: 18px; flex: none; }
+.fit-parts { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin: 12px 0 4px; }
+.fit-parts b { color: var(--text); }
+.ctrl-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 0; }
+.ctrl-row .seg { margin-bottom: 8px; }
+.range-seg { margin-bottom: 10px; }
+.mchart { background: var(--surface); border-radius: var(--radius); padding: 10px 8px 4px; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.mchart-panel + .mchart-panel { margin-top: 6px; border-top: 1px solid var(--line); padding-top: 6px; }
+.mchart-title { font-size: 12px; color: var(--muted); font-weight: 650; margin: 0 4px 2px; }
+.mchart svg { width: 100%; height: auto; display: block; }
+.readout { background: var(--surface); border-radius: 12px; padding: 10px 12px; margin: 8px 0 4px; min-height: 40px; }
+.readout-head { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.readout-row { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 3px 0; }
+.readout-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.swatch-line { width: 22px; height: 8px; flex: none; }
+.chips.wrap { flex-wrap: wrap; overflow: visible; margin: 0 0 8px; padding: 0; }
+.chip .faint { font-size: 12px; margin-left: 2px; }
+.chip.cat-toggle.on { background: var(--surface-3); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--text); }
+.chip.cat-toggle.on .faint { color: var(--muted); }
+.chip.cat-toggle.part { background: var(--surface-2); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--faint); }
+.chip.ex-toggle { gap: 6px; }
+.chip.ex-toggle.on { background: var(--surface-3); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--text); }
+.chip.archived { opacity: .6; }
+.pick-group { margin-bottom: 8px; }
+.pick-group-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--muted); margin: 6px 2px 6px; }
+.legend-list { padding: 6px 10px 12px; }
+.legend-row { display: flex; align-items: center; border-bottom: 1px solid var(--line); }
+.legend-row.focus { background: var(--surface-2); border-radius: 8px; }
+.legend-main { flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 4px; text-align: left; min-width: 0; }
+.legend-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.legend-val { color: var(--muted); font-size: 14px; }
+.legend-pct { font-size: 13px; font-weight: 700; min-width: 52px; text-align: right; color: var(--muted); }
+.legend-pct.up { color: var(--ok); }
+.legend-pct.down { color: var(--danger); }
+.legend-link { color: var(--faint); width: 32px; height: 40px; display: grid; place-items: center; }
+.legend-link svg { width: 18px; height: 18px; }
